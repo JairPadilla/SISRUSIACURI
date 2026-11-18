@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marca institucional · Panel de control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#0F3D3B; --pine-deep:#0A2B29; --forest:#1F6F54; --forest-soft:#E7EFE9;
+    --paper:#F5F3EC; --paper-raised:#FFFFFF; --ink:#26241F; --ink-soft:#5B5A54; --ink-faint:#8B887C;
+    --line:#DFDACB; --ochre:#B9852F; --ochre-deep:#8F6620; --ochre-soft:#F5E9D4;
+    --done:#3E7C5A; --warn:#B5502E; --warn-soft:#F6E4DA;
+    --radius-s:6px; --radius-m:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper); color:var(--ink); font-family:'Public Sans', system-ui, sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Source Serif 4', Georgia, serif; font-weight:600; color:var(--pine-deep); margin:0;}
+  .mono{font-family:'IBM Plex Mono', ui-monospace, monospace;}
+  .skip{position:absolute;left:-9999px;}
+  .skip:focus{left:12px;top:12px;background:#fff;padding:8px 14px;border-radius:var(--radius-s);z-index:999;}
+
+  .topbar{background:linear-gradient(180deg,var(--pine) 0%, var(--pine-deep) 100%); color:#EFEEE6; padding:22px clamp(20px,4vw,56px); display:flex; align-items:center; gap:16px;}
+  .topbar-logo{width:40px; height:40px; flex-shrink:0; display:block;}
+
+  /* menú de usuario (rol según el acceso) */
+  .user{position:relative; margin-left:auto; flex-shrink:0;}
+  .user-btn{display:inline-flex; align-items:center; gap:10px; padding:5px 12px 5px 5px; border:1px solid var(--ochre); border-radius:999px; background:var(--paper-raised); color:var(--pine-deep); font:500 13.5px 'Public Sans',sans-serif; cursor:pointer; transition:background .15s ease;}
+  .user-btn:hover,.user-btn[aria-expanded="true"]{background:var(--paper);}
+  .user-btn:focus-visible,.user-menu .item:focus-visible{outline:2px solid var(--ochre); outline-offset:2px;}
+  .user-btn .avatar{width:32px; height:32px; border-radius:50%; background:var(--pine-deep); color:#F5F3EC; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .u-ico{width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;}
+  .user-btn .chev{width:16px; height:16px; color:var(--ink-soft); transition:transform .2s ease;}
+  .user-btn[aria-expanded="true"] .chev{transform:rotate(180deg);}
+  .user-menu{position:absolute; right:0; top:calc(100% + 10px); width:272px; padding:6px; background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); box-shadow:0 18px 40px -18px rgba(10,43,41,.38); opacity:0; visibility:hidden; transform:translateY(-6px); transition:opacity .15s ease, transform .15s ease, visibility 0s .15s; z-index:40;}
+  .user-menu.open{opacity:1; visibility:visible; transform:none; transition:opacity .15s ease, transform .15s ease;}
+  .user-menu .info{padding:12px 12px 11px; margin-bottom:6px; border-bottom:1px solid var(--line);}
+  .user-menu .info strong{display:block; font-size:14px; color:var(--pine-deep);}
+  .user-menu .info span{display:block; margin-top:2px; font-size:12.5px; color:var(--ink-soft);}
+  .user-menu .item{display:flex; align-items:center; gap:11px; width:100%; padding:10px 12px; border:none; border-radius:7px; background:none; color:var(--pine-deep); font:500 14px 'Public Sans',sans-serif; text-align:left; text-decoration:none; cursor:pointer;}
+  .user-menu .item .u-ico{color:var(--ink-soft);}
+  .user-menu .item:hover{background:var(--paper);}
+  .user-menu .item.salir:hover{background:var(--warn-soft); color:var(--warn);} .user-menu .item.salir:hover .u-ico{color:var(--warn);}
+  @media (max-width:640px){ .user-btn{padding-right:9px;} .user-btn .rol{display:none;} .user-menu{width:min(272px, calc(100vw - 24px));} }
+  .topbar-text .title{font-family:'Source Serif 4',serif;font-size:19px;font-weight:600;color:#FAF9F2;}
+
+  main{max-width:1020px; margin:0 auto; padding:clamp(28px,4vw,52px) clamp(20px,4vw,56px) 80px;}
+
+  .lead{max-width:640px; margin-bottom:34px;}
+  .lead h1{font-size:clamp(26px,3.2vw,34px); line-height:1.15; letter-spacing:-.01em;}
+  .lead p{color:var(--ink-soft); margin-top:10px; font-size:16px; max-width:58ch;}
+
+  .layout{display:grid; grid-template-columns: 1fr 300px; gap:24px; align-items:start; margin-bottom:46px;}
+
+  .card{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m);}
+  .form-card{border-left:3px solid var(--ochre); padding:28px clamp(22px,3vw,32px) 30px;}
+  .form-card .head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:22px;}
+  .form-card h2{font-size:20px;}
+  .mode-tag{font-size:12.5px; font-weight:600; padding:4px 11px; border-radius:999px; background:var(--forest-soft); color:var(--forest);}
+  .mode-tag.editing{background:var(--ochre-soft); color:var(--ochre-deep);}
+
+  .grid-2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px 24px;}
+  .field label{display:block; font-size:13px; font-weight:600; color:var(--pine-deep); margin-bottom:6px;}
+  .field .hint{font-weight:400; color:var(--ink-faint); font-size:12px;}
+  .field input{
+    width:100%; font-family:inherit; font-size:14.5px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:var(--radius-s); background:#FCFBF7; color:var(--ink);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .field input::placeholder{color:#A6A296;}
+  .field input:focus{outline:none; border-color:var(--forest); background:#fff; box-shadow:0 0 0 3px var(--forest-soft);}
+  .field input:disabled{color:var(--ink-faint); background:#F2F0E8; cursor:not-allowed;}
+  .field.full{grid-column:1 / -1;}
+
+  .actions{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px; padding-top:22px; border-top:1px solid var(--line);}
+  .btn{appearance:none; font-family:inherit; font-weight:600; font-size:14px; padding:10px 20px; border-radius:999px; cursor:pointer; transition:background .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease, transform .1s ease; display:inline-flex; align-items:center; gap:7px;}
+  .btn:active{transform:scale(.97);}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+  .btn-primary{border:1px solid var(--ochre); background:var(--ochre); color:#fff;}
+  .btn-primary:hover:not(:disabled){background:var(--ochre-deep); border-color:var(--ochre-deep);}
+  .btn-secondary{border:1px solid var(--forest); background:var(--forest-soft); color:var(--forest);}
+  .btn-secondary:hover:not(:disabled){background:var(--forest); color:#fff;}
+  .btn-danger{border:1px solid var(--warn); background:#fff; color:var(--warn);}
+  .btn-danger:hover:not(:disabled){background:var(--warn); color:#fff;}
+  .btn-ghost{border:1px solid var(--line); background:transparent; color:var(--ink-soft); margin-left:auto;}
+  .btn-ghost:hover:not(:disabled){border-color:var(--ink-soft); color:var(--ink);}
+
+  /* ---------- preview panel ---------- */
+  .preview-card{padding:22px; text-align:center;}
+  .preview-card .label{font-size:12px; font-weight:600; color:var(--ink-faint); margin-bottom:14px;}
+  .preview-frame{
+    width:100%; aspect-ratio:1/1; border-radius:var(--radius-s);
+    background:
+      linear-gradient(45deg, #F2F0E8 25%, transparent 25%) -8px 0/16px 16px,
+      linear-gradient(-45deg, #F2F0E8 25%, transparent 25%) -8px 0/16px 16px,
+      linear-gradient(45deg, transparent 75%, #F2F0E8 75%) -8px 0/16px 16px,
+      linear-gradient(-45deg, transparent 75%, #F2F0E8 75%) -8px 0/16px 16px,
+      #FCFBF7;
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    margin-bottom:14px;
+  }
+  .preview-frame img{max-width:80%; max-height:80%; object-fit:contain;}
+  .preview-frame .placeholder{color:var(--ink-faint); font-size:12.5px; padding:0 20px;}
+  .preview-name{font-family:'Source Serif 4',serif; font-weight:600; color:var(--pine-deep); font-size:15px;}
+  .preview-id{font-size:12px; color:var(--ink-faint); margin-top:2px;}
+
+  /* ---------- table ---------- */
+  .table-head{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:16px;}
+  .table-head h2{font-size:20px;}
+  .table-head .sub{color:var(--ink-soft); font-size:13.5px; margin-top:4px;}
+  .search{position:relative; width:220px; max-width:100%;}
+  .search input{width:100%; padding:9px 12px 9px 34px; border:1px solid var(--line); border-radius:999px; background:#fff; font-family:inherit; font-size:14px; color:var(--ink);}
+  .search input:focus{outline:none; border-color:var(--forest); box-shadow:0 0 0 3px var(--forest-soft);}
+  .search svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.45;}
+
+  .table-wrap{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); overflow:hidden;}
+  .thead{display:grid; grid-template-columns: 64px 1.6fr 2fr .6fr; gap:16px; align-items:center; padding:13px 20px; border-bottom:1px solid var(--line); background:#FBFAF5;}
+  .thead span{font-size:11px; font-weight:600; color:var(--ink-soft);}
+
+  .row{display:grid; grid-template-columns: 64px 1.6fr 2fr .6fr; gap:16px; align-items:center; padding:13px 20px; border-bottom:1px solid var(--line); cursor:pointer; transition:background .15s ease;}
+  .row:last-child{border-bottom:none;}
+  .row:hover{background:#FBFAF5;}
+  .row.selected{background:var(--forest-soft);}
+
+  .logo-thumb{
+    width:44px; height:44px; border-radius:8px; border:1px solid var(--line); background:#FCFBF7;
+    display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;
+  }
+  .logo-thumb img{max-width:80%; max-height:80%; object-fit:contain;}
+  .logo-thumb .fallback{
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    font-family:'Source Serif 4',serif; font-weight:600; font-size:13px; color:var(--forest); background:var(--forest-soft);
+  }
+
+  .name-cell .entidad{font-weight:600; color:var(--pine-deep); font-size:14.5px;}
+  .name-cell .id{font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
+  .url-cell{font-size:12.5px; color:var(--forest); word-break:break-all;}
+  .url-cell a{color:inherit; text-decoration:none;}
+  .url-cell a:hover{text-decoration:underline;}
+
+  .row-actions{display:flex; gap:6px; justify-content:flex-end;}
+  .icon-btn{width:30px; height:30px; border-radius:7px; border:1px solid var(--line); background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-soft); transition:border-color .15s ease, color .15s ease, background .15s ease;}
+  .icon-btn:hover{border-color:var(--forest); color:var(--forest); background:var(--forest-soft);}
+  .icon-btn.del:hover{border-color:var(--warn); color:var(--warn); background:var(--warn-soft);}
+
+  .empty-note{font-size:14px; color:var(--ink-soft); padding:24px 20px; display:none;}
+
+  .toast{position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); background:var(--pine-deep); color:#FAF9F2; padding:12px 20px; border-radius:999px; font-size:14px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; box-shadow:0 8px 24px rgba(10,43,41,.25);}
+  .toast.show{opacity:1; transform:translate(-50%,0);}
+
+  @media (max-width:820px){
+    .layout{grid-template-columns:1fr;}
+    .grid-2{grid-template-columns:1fr;}
+    .thead{display:none;}
+    .row{grid-template-columns: 52px 1fr; grid-template-areas:"thumb name" "thumb url" "actions actions"; border:1px solid var(--line); border-radius:var(--radius-m); margin:0 0 12px; padding:14px;}
+    .row .logo-thumb{grid-area:thumb;}
+    .row .name-cell{grid-area:name;}
+    .row .url-cell{grid-area:url;}
+    .row-actions{grid-area:actions; justify-content:flex-start; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line);}
+    .table-wrap{background:transparent; border:none;}
+  }
+
+  main{opacity:0; animation:rise .5s ease forwards;}
+  @keyframes rise{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){ main{animation:none; opacity:1;} *{transition:none !important;} }
+  .upload-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .upload-row .btn{padding:9px 18px;}
+  .btn-quiet{border:1px solid var(--line); background:transparent; color:var(--ink-soft);}
+  .btn-quiet:hover:not(:disabled){border-color:var(--warn); color:var(--warn);}
+  .upload-status{font-size:13px; color:var(--ink-soft); word-break:break-all; flex:1 1 180px;}
+  .upload-status.pending{color:var(--ochre-deep); font-weight:600;}
+  .aviso{display:none; margin:0 0 20px; padding:12px 16px; border:1px solid var(--warn); border-left-width:4px; border-radius:10px; background:#FBEFEA; color:var(--warn); font-size:13px; line-height:1.55;}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<header class="topbar">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="u-usuario" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="u-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="u-inicio" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="u-salir" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol></defs></svg>
+  <svg class="topbar-logo" viewBox="0 0 100 100" role="img" aria-label="Logo del SISR">
+    <circle cx="50" cy="50" r="50" fill="#B9852F"/>
+    <circle cx="50" cy="50" r="43.5" fill="#0C3432"/>
+    <rect x="31" y="57" width="8" height="12" rx="1" fill="#D9A94F"/>
+    <rect x="44" y="48" width="8" height="21" rx="1" fill="#D9A94F"/>
+    <rect x="57" y="37.5" width="8" height="31.5" rx="1" fill="#D9A94F"/>
+    <polyline points="26.5,31.6 39.2,44.4 75.4,14.1" fill="none" stroke="#F5F3EC" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="topbar-text">
+    <div class="title">Marca institucional</div>
+  </div>
+  <div class="user" id="user">
+    <button class="user-btn" id="btnUsuario" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu">
+      <span class="avatar"><svg class="u-ico" aria-hidden="true"><use href="#u-usuario"/></svg></span>
+      <span class="rol" id="rolTxt">Rol: …</span>
+      <svg class="u-ico chev" aria-hidden="true"><use href="#u-abajo"/></svg>
+    </button>
+    <div class="user-menu" id="userMenu" role="menu" aria-label="Menú de usuario">
+      <div class="info"><strong id="rolMenu">Rol: …</strong><span id="nombreMenu">SISR</span></div>
+      <a class="item" role="menuitem" href="panel-administrativo%20(1).html"><svg class="u-ico" aria-hidden="true"><use href="#u-inicio"/></svg>Panel principal</a>
+      <button class="item salir" id="btnSalir" role="menuitem" type="button"><svg class="u-ico" aria-hidden="true"><use href="#u-salir"/></svg>Cerrar sesión</button>
+    </div>
+  </div>
+</header>
+
+<main id="contenido">
+
+  <div class="aviso" id="aviso" role="alert"></div>
+
+  <div class="lead">
+    <h1>Entidades y su imagen institucional</h1>
+    <p>Registra el nombre y el logotipo de cada entidad que aparecerá en los reportes y pantallas del sistema.</p>
+  </div>
+
+  <div class="layout">
+    <section class="card form-card" aria-labelledby="form-title">
+      <div class="head">
+        <h2 id="form-title">Datos de la entidad</h2>
+        <span class="mode-tag" id="modeTag">Registrando nueva entidad</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="f-id">id <span class="hint">(se asigna automáticamente)</span></label>
+          <input type="text" id="f-id" disabled placeholder="—">
+        </div>
+        <div class="field">
+          <label for="f-nombre">Nombre de la entidad</label>
+          <input type="text" id="f-nombre" placeholder="Ej. Alcaldía de Usiacurí">
+        </div>
+        <div class="field full">
+          <label for="btnUpload">Logo de la entidad <span class="hint">(PNG, JPG, WEBP o GIF · máximo 2 MB)</span></label>
+          <div class="upload-row">
+            <button type="button" class="btn btn-secondary" id="btnUpload">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span id="uploadLabel">Subir logo</span>
+            </button>
+            <button type="button" class="btn btn-quiet" id="btnQuitar" hidden>Quitar logo</button>
+            <span class="upload-status" id="uploadStatus">Sin logo</span>
+          </div>
+          <input type="file" id="f-archivo" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="btnAdd">Añadir</button>
+        <button class="btn btn-secondary" id="btnUpdate" disabled>Modificar</button>
+        <button class="btn btn-danger" id="btnDelete" disabled>Eliminar</button>
+        <button class="btn btn-ghost" id="btnClear">Limpiar</button>
+      </div>
+    </section>
+
+    <aside class="card preview-card">
+      <div class="label">Vista previa</div>
+      <div class="preview-frame" id="previewFrame">
+        <span class="placeholder">La imagen aparecerá aquí cuando subas un logo</span>
+      </div>
+      <div class="preview-name" id="previewName">Nueva entidad</div>
+      <div class="preview-id" id="previewId">Sin id asignado</div>
+    </aside>
+  </div>
+
+  <div class="table-head">
+    <div>
+      <h2>Entidades registradas</h2>
+      <div class="sub" id="countSub"></div>
+    </div>
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#26241F" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="buscador" placeholder="Buscar entidad">
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="thead">
+      <span>Logo</span>
+      <span>Entidad</span>
+      <span>Archivo del logo</span>
+      <span></span>
+    </div>
+    <div id="rows"></div>
+    <p class="empty-note" id="emptyNote">No hay entidades que coincidan con tu búsqueda.</p>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = '/api/logos';
+  const TIPOS = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  const MAX_BYTES = 2 * 1024 * 1024;
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  let marcas = [];            // vienen de la tabla logos
+  let selectedId = null;
+  let archivoPendiente = null;   // imagen elegida que aún no se ha guardado
+  let quitarLogo = false;        // true si se pidió quitar el logo guardado
+  let urlTemporal = null;        // vista previa local del archivo elegido
+
+  const rowsEl = document.getElementById('rows');
+  const emptyNote = document.getElementById('emptyNote');
+  const countSub = document.getElementById('countSub');
+  const buscador = document.getElementById('buscador');
+  const modeTag = document.getElementById('modeTag');
+  const btnAdd = document.getElementById('btnAdd');
+  const btnUpdate = document.getElementById('btnUpdate');
+  const btnDelete = document.getElementById('btnDelete');
+  const btnClear = document.getElementById('btnClear');
+  const btnUpload = document.getElementById('btnUpload');
+  const btnQuitar = document.getElementById('btnQuitar');
+  const uploadLabel = document.getElementById('uploadLabel');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const inputArchivo = document.getElementById('f-archivo');
+  const avisoEl = document.getElementById('aviso');
+  const toast = document.getElementById('toast');
+  const previewFrame = document.getElementById('previewFrame');
+  const previewName = document.getElementById('previewName');
+  const previewId = document.getElementById('previewId');
+  const f = id => document.getElementById('f-'+id);
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toast.classList.remove('show'), 2400);
+  }
+
+  const imagenUrl = m => API + '/' + m.id + '/imagen?v=' + encodeURIComponent(m.version || '');
+  const iniciales = n => n.trim().slice(0, 2).toUpperCase();
+  function formatBytes(n){ return n < 1024 ? n + ' B' : n < 1048576 ? (n/1024).toFixed(0) + ' KB' : (n/1048576).toFixed(1) + ' MB'; }
+  const seleccionada = () => marcas.find(x=>x.id===selectedId);
+
+  /* ---------- comunicación con la base de datos ---------- */
+
+  function describirFallo(fallo){
+    if(fallo === 'conexion')
+      return 'No se pudo conectar con el servidor. Abre esta página desde http://localhost:3000/marca-institucional.html y comprueba que "node server.js" esté en ejecución.';
+    if(fallo === 404)
+      return 'El servidor no tiene la ruta ' + API + '. Reemplaza server.js por la versión más reciente y reinícialo (Ctrl + C y luego node server.js).';
+    if(fallo === 'formato')
+      return 'La ruta ' + API + ' no devolvió datos válidos. Comprueba que estés abriendo la página desde http://localhost:3000.';
+    return 'El servidor respondió con un error (' + fallo + ') en ' + API + '. Revisa la ventana donde se ejecuta node server.js.';
+  }
+
+  async function cargar(){
+    let fallo = null;
+    try{
+      const r = await fetch(API);
+      if(!r.ok) fallo = r.status;
+      else marcas = await r.json();
+    }catch(e){
+      fallo = (e instanceof SyntaxError) ? 'formato' : 'conexion';
+    }
+    avisoEl.textContent = fallo ? describirFallo(fallo) : '';
+    avisoEl.style.display = fallo ? 'block' : 'none';
+  }
+
+  // Envía datos en JSON; devuelve la respuesta ya convertida, o null si hubo error (y lo muestra)
+  async function enviarJSON(url, method, body){
+    try{
+      const r = await fetch(url, {
+        method,
+        headers: {'Content-Type':'application/json'},
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if(r.ok) return r.status === 204 ? {} : await r.json();
+      const err = await r.json().catch(()=>({}));
+      showToast(err.error || 'Ocurrió un error (' + r.status + ')');
+    }catch(e){
+      showToast('No se pudo conectar con el servidor');
+    }
+    return null;
+  }
+
+  // Sube el archivo de imagen tal cual (sin convertirlo a texto)
+  async function subirLogo(id, archivo){
+    try{
+      const r = await fetch(API + '/' + id + '/imagen', {
+        method: 'PUT',
+        headers: {'Content-Type': archivo.type || 'application/octet-stream', 'X-Nombre-Archivo': encodeURIComponent(archivo.name)},
+        body: archivo
+      });
+      if(r.ok) return true;
+      const err = await r.json().catch(()=>({}));
+      showToast(err.error || 'No se pudo subir el logo (' + r.status + ')');
+    }catch(e){
+      showToast('No se pudo conectar con el servidor');
+    }
+    return false;
+  }
+
+  /* ---------- logo: elegir, previsualizar, quitar ---------- */
+
+  function olvidarArchivo(){
+    archivoPendiente = null;
+    if(urlTemporal){ URL.revokeObjectURL(urlTemporal); urlTemporal = null; }
+    inputArchivo.value = '';
+  }
+
+  function ponerImagenPreview(src, alt){
+    previewFrame.innerHTML = '';
+    const img = document.createElement('img');
+    img.alt = alt;
+    img.addEventListener('error', ()=>{ previewFrame.innerHTML = '<span class="placeholder">No se pudo mostrar la imagen</span>'; });
+    img.src = src;
+    previewFrame.appendChild(img);
+  }
+
+  function updatePreview(){
+    const nombre = f('nombre').value.trim();
+    const m = seleccionada();
+    previewName.textContent = nombre || 'Nueva entidad';
+    previewId.textContent = m ? ('id ' + m.id) : 'Sin id asignado';
+
+    let estado = 'Sin logo', pendiente = false, hayLogo = false;
+    if(archivoPendiente){
+      ponerImagenPreview(urlTemporal, 'Logo de ' + (nombre || 'la entidad'));
+      estado = archivoPendiente.name + ' · se guardará al pulsar ' + (m ? '«Modificar»' : '«Añadir»');
+      pendiente = true; hayLogo = true;
+    } else if(m && m.tieneLogo && !quitarLogo){
+      ponerImagenPreview(imagenUrl(m), 'Logo de ' + m.nombre);
+      estado = 'Logo actual: ' + (m.logoNombre || 'logo') + ' · ' + formatBytes(m.logoBytes);
+      hayLogo = true;
+    } else {
+      previewFrame.innerHTML = '<span class="placeholder">La imagen aparecerá aquí cuando subas un logo</span>';
+      if(quitarLogo) estado = 'El logo se quitará al pulsar «Modificar»';
+    }
+    uploadStatus.textContent = estado;
+    uploadStatus.classList.toggle('pending', pendiente || quitarLogo);
+    btnQuitar.hidden = !hayLogo;
+    uploadLabel.textContent = ((m && m.tieneLogo && !quitarLogo) || archivoPendiente) ? 'Cambiar logo' : 'Subir logo';
+  }
+
+  function elegirArchivo(){
+    const archivo = inputArchivo.files && inputArchivo.files[0];
+    if(!archivo) return;
+    if(!TIPOS.includes(archivo.type)){ showToast('El logo debe ser PNG, JPG, WEBP o GIF'); inputArchivo.value = ''; return; }
+    if(archivo.size > MAX_BYTES){ showToast('El logo supera el máximo de 2 MB'); inputArchivo.value = ''; return; }
+    if(urlTemporal) URL.revokeObjectURL(urlTemporal);
+    archivoPendiente = archivo;
+    urlTemporal = URL.createObjectURL(archivo);
+    quitarLogo = false;
+    updatePreview();
+  }
+
+  function quitarSeleccion(){
+    const m = seleccionada();
+    olvidarArchivo();
+    quitarLogo = !!(m && m.tieneLogo);
+    updatePreview();
+  }
+
+  /* ---------- dibujo de la página ---------- */
+
+  function render(){
+    const q = buscador.value.trim().toLowerCase();
+    rowsEl.innerHTML = '';
+    let visible = 0;
+    marcas.forEach(m=>{
+      if(q && !m.nombre.toLowerCase().includes(q)) return;
+      visible++;
+      const row = document.createElement('div');
+      row.className = 'row' + (m.id === selectedId ? ' selected' : '');
+      row.innerHTML = `
+        <div class="logo-thumb"></div>
+        <div class="name-cell"><div class="entidad">${esc(m.nombre)}</div><div class="id">id ${esc(m.id)}</div></div>
+        <div class="url-cell">${m.tieneLogo
+          ? `<a href="${API}/${esc(m.id)}/imagen" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(m.logoNombre || 'logo')}</a> <span style="color:var(--ink-faint)">· ${formatBytes(m.logoBytes)}</span>`
+          : '<span style="color:var(--ink-faint)">Sin logo cargado</span>'}</div>
+        <div class="row-actions">
+          <button class="icon-btn edit" title="Editar" aria-label="Editar ${esc(m.nombre)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <button class="icon-btn del" title="Eliminar" aria-label="Eliminar ${esc(m.nombre)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      `;
+      // La miniatura se arma con el DOM (no con texto) para que ningún nombre se interprete como HTML
+      const thumb = row.querySelector('.logo-thumb');
+      const respaldo = ()=>{ thumb.innerHTML = '<div class="fallback">' + esc(iniciales(m.nombre)) + '</div>'; };
+      if(m.tieneLogo){
+        const img = document.createElement('img');
+        img.alt = 'Logo de ' + m.nombre;
+        img.addEventListener('error', respaldo);
+        img.src = imagenUrl(m);
+        thumb.appendChild(img);
+      } else respaldo();
+
+      row.querySelector('.edit').addEventListener('click', e=>{ e.stopPropagation(); selectRow(m.id); });
+      row.querySelector('.del').addEventListener('click', e=>{ e.stopPropagation(); selectRow(m.id); deleteSelected(); });
+      row.addEventListener('click', ()=> selectRow(m.id));
+      rowsEl.appendChild(row);
+    });
+    emptyNote.style.display = visible === 0 && marcas.length > 0 ? 'block' : 'none';
+    countSub.textContent = marcas.length + ' entidad' + (marcas.length===1?'':'es') + ' registrada' + (marcas.length===1?'':'s');
+  }
+
+  function selectRow(id){
+    olvidarArchivo();
+    quitarLogo = false;
+    selectedId = id;
+    const m = seleccionada();
+    f('id').value = m.id;
+    f('nombre').value = m.nombre;
+    modeTag.textContent = 'Editando ' + m.nombre;
+    modeTag.classList.add('editing');
+    btnUpdate.disabled = false;
+    btnDelete.disabled = false;
+    updatePreview();
+    render();
+  }
+
+  function clearForm(){
+    olvidarArchivo();
+    quitarLogo = false;
+    selectedId = null;
+    f('id').value = '';
+    f('nombre').value = '';
+    modeTag.textContent = 'Registrando nueva entidad';
+    modeTag.classList.remove('editing');
+    btnUpdate.disabled = true;
+    btnDelete.disabled = true;
+    updatePreview();
+    render();
+  }
+
+  /* ---------- acciones ---------- */
+
+  async function addMarca(){
+    const nombre = f('nombre').value.trim();
+    if(!nombre){ f('nombre').focus(); showToast('Escribe el nombre de la entidad'); return; }
+    const creada = await enviarJSON(API, 'POST', {nombre});
+    if(!creada) return;
+    if(archivoPendiente && !(await subirLogo(creada.id, archivoPendiente)))
+      showToast('Entidad añadida, pero el logo no se pudo subir. Edítala para intentarlo de nuevo');
+    else showToast('Entidad añadida');
+    await cargar();
+    clearForm();
+  }
+
+  async function updateSelected(){
+    if(selectedId === null) return;
+    const m = seleccionada();
+    const nombre = f('nombre').value.trim() || m.nombre;
+    if(!(await enviarJSON(API + '/' + selectedId, 'PUT', {nombre}))) return;
+    let ok = true;
+    if(archivoPendiente) ok = await subirLogo(selectedId, archivoPendiente);
+    else if(quitarLogo) ok = !!(await enviarJSON(API + '/' + selectedId + '/imagen', 'DELETE'));
+    if(ok) showToast('Entidad modificada');
+    await cargar();
+    clearForm();
+  }
+
+  async function deleteSelected(){
+    if(selectedId === null) return;
+    const m = seleccionada();
+    if(!confirm('¿Eliminar "' + m.nombre + '" y su logo? Esta acción no se puede deshacer.')) return;
+    if(await enviarJSON(API + '/' + selectedId, 'DELETE')){
+      showToast('Entidad eliminada');
+      await cargar();
+      clearForm();
+    }
+  }
+
+  btnAdd.addEventListener('click', addMarca);
+  btnUpdate.addEventListener('click', updateSelected);
+  btnDelete.addEventListener('click', deleteSelected);
+  btnClear.addEventListener('click', clearForm);
+  btnUpload.addEventListener('click', ()=> inputArchivo.click());
+  btnQuitar.addEventListener('click', quitarSeleccion);
+  inputArchivo.addEventListener('change', elegirArchivo);
+  buscador.addEventListener('input', render);
+  f('nombre').addEventListener('input', updatePreview);
+
+  /* ---------- usuario de la sesión: el rol sale de su cuenta ---------- */
+  const btnUsuario = document.getElementById('btnUsuario');
+  const userMenu = document.getElementById('userMenu');
+  function cerrarMenuUsuario(devolverFoco){
+    if(!userMenu.classList.contains('open')) return;
+    userMenu.classList.remove('open');
+    btnUsuario.setAttribute('aria-expanded', 'false');
+    if(devolverFoco) btnUsuario.focus();
+  }
+  btnUsuario.addEventListener('click', e=>{
+    e.stopPropagation();
+    const abrir = !userMenu.classList.contains('open');
+    userMenu.classList.toggle('open', abrir);
+    btnUsuario.setAttribute('aria-expanded', String(abrir));
+  });
+  document.addEventListener('click', e=>{ if(!e.target.closest('#user')) cerrarMenuUsuario(false); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarMenuUsuario(true); });
+  document.getElementById('btnSalir').addEventListener('click', async ()=>{
+    try{ await fetch('/api/logout', {method:'POST'}); }catch(e){ /* sin servidor: igual se vuelve al inicio de sesión */ }
+    location.href = 'iniciar-sesion.html';
+  });
+
+  async function cargarSesion(){
+    try{
+      const r = await fetch('/api/sesion');
+      if(r.status === 401){ location.href = 'iniciar-sesion.html?volver=/marca-institucional.html'; return; }
+      if(!r.ok) return;
+      const a = await r.json();   // rol: Superadministrador o Administrador
+      document.getElementById('rolTxt').textContent = 'Rol: ' + a.rol;
+      document.getElementById('rolMenu').textContent = 'Rol: ' + a.rol;
+      // Debajo del rol, el nombre de la persona que inició sesión
+      if(a.nombre) document.getElementById('nombreMenu').textContent = String(a.nombre).trim().toLocaleUpperCase('es-CO');
+    }catch(e){ /* sin servidor: el rol se queda sin mostrar */ }
+  }
+  cargarSesion();
+
+  cargar().then(clearForm);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estado de cumplimientos · SISR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#0F3D3B; --pine-deep:#0A2B29; --forest:#1F6F54; --paper:#F5F3EC; --card:#FFFFFF;
+    --ink:#26241F; --ink-soft:#5B5A54; --ink-faint:#8B887C; --line:#DFDACB;
+    --ochre:#B9852F; --ochre-soft:#F3E5CC; --ok:#1F6F54; --ok-soft:#DAE7E0; --bad:#9B3F4A; --bad-soft:#F4DEE0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Public Sans',system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased;}
+  h1{font-family:'Source Serif 4',Georgia,serif; font-weight:700; color:var(--pine-deep); margin:0;}
+  button,select,input{font-family:inherit;}
+
+  .topbar{background:linear-gradient(180deg,var(--pine),var(--pine-deep)); color:#EFEEE6; padding:12px clamp(16px,3vw,40px); display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .emblem{width:40px;height:40px;flex-shrink:0; display:block; filter:drop-shadow(0 2px 6px rgba(0,0,0,.35));}
+  .nav{font-size:15px; line-height:1.4;}
+  .nav strong{font-weight:600; color:#fff;}
+  .user{margin-left:auto; display:flex; align-items:center; gap:14px;}
+  .user .who{text-align:right; font-weight:700; letter-spacing:.04em; font-size:14px; line-height:1.3; text-transform:uppercase;}
+  .user .who span{display:block; font-size:13px;}
+  /* Rol del usuario con su menú desplegable */
+  .user-wrap{position:relative; flex-shrink:0;}
+  .rol-btn{display:inline-flex; align-items:center; gap:10px; padding:5px 12px 5px 5px; border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--pine-deep); font-size:13.5px; font-weight:600; cursor:pointer; transition:border-color .15s ease;}
+  .rol-btn:hover,.rol-btn[aria-expanded="true"]{border-color:var(--ochre);}
+  .rol-btn:focus-visible{outline:2px solid var(--ochre); outline-offset:2px;}
+  .rol-btn .av{width:32px; height:32px; border-radius:50%; background:var(--pine-deep); color:#F3EFDD; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .rol-btn .av svg{width:17px; height:17px;}
+  .rol-btn .rol{white-space:nowrap;}
+  .rol-btn .chev{width:16px; height:16px; color:var(--ink-soft); transition:transform .2s ease;}
+  .rol-btn[aria-expanded="true"] .chev{transform:rotate(180deg);}
+  .rol-menu{position:absolute; right:0; top:calc(100% + 10px); width:272px; padding:6px; background:#fff; color:var(--ink); border:1px solid var(--line); border-radius:10px; box-shadow:0 18px 40px -18px rgba(10,43,41,.4); opacity:0; visibility:hidden; transform:translateY(-6px); transition:opacity .15s ease, transform .15s ease, visibility 0s .15s; z-index:40;}
+  .rol-menu.open{opacity:1; visibility:visible; transform:none; transition:opacity .15s ease, transform .15s ease;}
+  .rol-menu .info{padding:12px 12px 11px; margin-bottom:6px; border-bottom:1px solid var(--line);}
+  .rol-menu .info strong{display:block; font-size:14px; color:var(--pine-deep);}
+  .rol-menu .info span{display:block; margin-top:2px; font-size:12.5px; color:var(--ink-soft);}
+  .rol-menu .rol-item{display:flex; align-items:center; gap:11px; width:100%; padding:10px 12px; border:none; border-radius:7px; background:none; color:var(--ink); font-size:14px; font-weight:500; text-align:left; text-decoration:none; cursor:pointer;}
+  .rol-menu .rol-item svg{width:17px; height:17px; color:var(--ink-soft); flex-shrink:0;}
+  .rol-menu .rol-item:hover,.rol-menu .rol-item:focus-visible{background:#FCFBF7; outline:none;}
+  .rol-menu .rol-item.salir:hover,.rol-menu .rol-item.salir:focus-visible{background:var(--bad-soft); color:var(--bad);}
+  .rol-menu .rol-item.salir:hover svg,.rol-menu .rol-item.salir:focus-visible svg{color:var(--bad);}
+  @media (max-width:520px){ .user{width:100%; justify-content:flex-end; margin-left:0;} .rol-menu{right:0;} }
+
+  main{max-width:860px; margin:0 auto; padding:44px 20px 60px;}
+  h1{font-size:clamp(30px,6vw,40px); line-height:1.1;}
+  .sub{margin:10px 0 28px; color:var(--ink-soft);}
+
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:22px;}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px;}
+  .stat b{display:block; font-family:'Source Serif 4',serif; font-size:26px;}
+  .stat span{font-size:13px; color:var(--ink-soft);}
+  .stat.p b{color:var(--ochre);} .stat.a b{color:var(--ok);} .stat.d b{color:var(--bad);}
+
+  .filters{display:grid; grid-template-columns:2fr 1.6fr 1fr 1fr; gap:10px; margin-bottom:18px;}
+  .filters input,.filters select,.filters .fixed{padding:11px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); font-size:14px; color:var(--ink); width:100%;}
+  .filters .fixed{display:flex; align-items:center; gap:6px; font-weight:600;}
+  .filters .fixed small{font-weight:400; color:var(--ink-soft); font-size:14px;}
+  .filters :focus-visible{outline:2px solid var(--forest); outline-offset:1px;}
+  @media (max-width:720px){ .filters{grid-template-columns:1fr 1fr;} .filters input,.filters .fixed{grid-column:1 / -1;} }
+
+  .count{font-size:13px; color:var(--ink-faint); margin-bottom:12px;}
+  .count span{background:var(--ok-soft); color:var(--forest); font-weight:600; border-radius:999px; padding:1px 9px; margin-left:6px;}
+
+  .item{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin-bottom:12px; display:grid; grid-template-columns:1fr auto auto auto auto; gap:18px; align-items:center;}
+  .item h2{font-size:15px; margin:0 0 3px; color:var(--ink);}
+  .item .meta{font-size:12.5px; color:var(--ink-soft);}
+  .item .meta-red{font-size:13.5px; margin-top:6px;}
+  .item .meta-red b{color:var(--ochre); font-size:12px; letter-spacing:.03em;}
+  .kv small{display:block; font-size:11.5px; color:var(--ink-soft);}
+  .kv b{font-size:14.5px;}
+  .pill{font-size:12px; font-weight:600; padding:5px 12px; border-radius:999px; white-space:nowrap;}
+  .pill.Pendiente{background:var(--ochre-soft); color:#8F6620;}
+  .pill.Aprobado{background:var(--ok-soft); color:var(--ok);}
+  .pill.Borrador{background:#E9E7DE; color:var(--ink-soft);}
+  .pill.Devuelto{background:var(--bad-soft); color:var(--bad);}
+  .ver{border:1px solid var(--line); background:#fff; border-radius:6px; padding:8px 22px; font-weight:600; color:var(--bad); cursor:pointer;}
+  .ver:hover{border-color:var(--pine-deep);}
+  @media (max-width:760px){ .item{grid-template-columns:1fr 1fr 1fr;} .item > div:first-child{grid-column:1 / -1;} }
+
+  .vacio{background:var(--card); border:1px dashed var(--line); border-radius:10px; padding:28px; text-align:center; color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <svg class="emblem" viewBox="0 0 100 100" role="img" aria-label="Logo del SISR">
+    <circle cx="50" cy="50" r="50" fill="#B9852F"/>
+    <circle cx="50" cy="50" r="43.5" fill="#0C3432"/>
+    <rect x="31" y="57" width="8" height="12" rx="1" fill="#D9A94F"/>
+    <rect x="44" y="48" width="8" height="21" rx="1" fill="#D9A94F"/>
+    <rect x="57" y="37.5" width="8" height="31.5" rx="1" fill="#D9A94F"/>
+    <polyline points="26.5,31.6 39.2,44.4 75.4,14.1" fill="none" stroke="#F5F3EC" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="nav"><strong>Estado de cumplimientos</strong></div>
+  <div class="user">
+    <!-- Rol del usuario que inició sesión (se completa al cargar la página) -->
+    <div class="user-wrap" id="userWrap" hidden>
+      <button class="rol-btn" id="btnRol" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="rolMenu">
+        <span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <span class="rol" id="rolTexto">Rol</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="rol-menu" id="rolMenu" role="menu" aria-label="Menú de usuario">
+        <div class="info"><strong id="rolTitulo">Rol</strong><span>SISR</span></div>
+        <a class="rol-item" id="rolInicio" role="menuitem" href="panel-administrativo%20(1).html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Panel principal
+        </a>
+        <button class="rol-item salir" id="btnSalir" role="menuitem" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <h1>Estado de cumplimientos</h1>
+  <p class="sub">Revisa el estado de los cumplimientos que registraste en tu sector.</p>
+
+  <section class="stats" aria-label="Resumen">
+    <div class="stat p"><b id="nPend">0</b><span>Pendientes de revisión</span></div>
+    <div class="stat a"><b id="nApro">0</b><span>Aprobados esta semana</span></div>
+    <div class="stat d"><b id="nDev">0</b><span>Devueltos</span></div>
+  </section>
+
+  <div class="filters">
+    <input type="search" id="fBuscar" placeholder="Buscar código de indicador" aria-label="Buscar código de indicador">
+    <div class="fixed" id="fGestor"><small>Gestor:</small> <span>…</span></div>
+    <select id="fEstado" aria-label="Estado">
+      <option value="">Estado: Todos</option>
+      <option value="Borrador">Estado: Borrador</option>
+      <option value="Pendiente" selected>Estado: Pendiente</option>
+      <option value="Aprobado">Estado: Aprobado</option>
+      <option value="Devuelto">Estado: Devuelto</option>
+    </select>
+    <select id="fPeriodo" aria-label="Periodo"><option value="">Periodo: Todos</option></select>
+  </div>
+
+  <div class="count" id="conteo"></div>
+  <div id="lista"></div>
+</main>
+
+<script>
+  let datos = [];
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // Acepta '2026-10-08' (solo fecha) y '2026-10-08 19:26:24' (fecha y hora)
+  const aFecha = f => { f = String(f || ''); return new Date(f.length <= 10 ? f + 'T00:00:00' : f.replace(' ', 'T') + 'Z'); };
+  const fechaCorta = f => { const d = aFecha(f); return isNaN(d) ? '' : d.toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'2-digit'}); };
+  const mes = f => String(f).slice(0, 7); // AAAA-MM
+
+  // El rol sale de la sesión del usuario: «Gestor» o «Gestor líder» para los gestores; para un
+  // administrador que abra esta página, su propio rol («Administrador» o «Superadministrador»)
+  let tipoSesion = 'gestor';
+  function mostrarRol(rol, tipo){
+    tipoSesion = tipo;
+    $('rolTexto').textContent = 'Rol: ' + rol;
+    $('rolTitulo').textContent = 'Rol: ' + rol;
+    $('rolInicio').href = 'panel-administrativo%20(1).html';
+    $('userWrap').hidden = false;
+  }
+
+  // Sin sesión de gestor no se manda al login a ciegas: si hay una sesión de administrador abierta,
+  // el login la devolvería a esta página y se formaría un ciclo (la pantalla parpadea sin parar)
+  async function irAlLogin(){
+    const admin = await fetch('/api/sesion').then(r => r.ok ? r.json() : null).catch(() => null);
+    if(!admin){ location.href = '/iniciar-sesion.html'; return; }
+    mostrarRol(admin.rol || 'Administrador', 'admin');
+    $('lista').innerHTML = '<div class="vacio">Tienes una sesión de administrador abierta y esta página es solo para gestores.<br>' +
+      '<button class="ver" id="btnCambiar" type="button" style="margin-top:14px">Cerrar sesión e ingresar como gestor</button></div>';
+    $('btnCambiar').onclick = async () => { await fetch('/api/logout', {method:'POST'}); location.href = '/iniciar-sesion.html'; };
+  }
+
+  async function cargar(){
+    try{
+      const rs = await fetch('/api/gestor/sesion');
+      if(!rs.ok) return irAlLogin();
+      const g = await rs.json();
+      mostrarRol(g.rol || 'Gestor', 'gestor');
+      $('fGestor').querySelector('span').textContent = g.id + ' · ' + g.nombre;
+
+      const rc = await fetch('/api/gestor/cumplimientos');
+      if(rc.status === 401) return irAlLogin();
+      datos = await rc.json();
+
+      const periodos = [...new Set(datos.map(c => mes(c.fecha)))].sort().reverse();
+      $('fPeriodo').innerHTML = '<option value="">Periodo: Todos</option>' +
+        periodos.map(p => '<option value="' + p + '">Periodo: ' + p + '</option>').join('');
+      pintar();
+    }catch(e){
+      $('lista').innerHTML = '<div class="vacio">No se pudo conectar con el servidor. Comprueba que "node server.js" esté en ejecución.</div>';
+    }
+  }
+
+  function pintar(){
+    // Resumen: siempre sobre todos los cumplimientos del gestor
+    const hace7 = Date.now() - 7*24*60*60*1000;
+    $('nPend').textContent = datos.filter(c => c.estado === 'Pendiente').length;
+    $('nDev').textContent = datos.filter(c => c.estado === 'Devuelto').length;
+    $('nApro').textContent = datos.filter(c => c.estado === 'Aprobado' && aFecha(c.fechaRevision || c.fecha) >= hace7).length;
+
+    const q = $('fBuscar').value.trim(), est = $('fEstado').value, per = $('fPeriodo').value;
+    const lista = datos.filter(c =>
+      (!q || String(c.codind).includes(q)) && (!est || c.estado === est) && (!per || mes(c.fecha) === per));
+
+    $('conteo').innerHTML = 'Avances ' + (est === 'Borrador' ? 'en borrador' : est ? est.toLowerCase() + 's' : 'registrados') + '<span>' + lista.length + '</span>';
+    $('lista').innerHTML = lista.length ? lista.map(c => `
+      <article class="item">
+        <div>
+          <h2>${esc($('fGestor').querySelector('span').textContent)}</h2>
+          <div class="meta">Indicador ${esc(c.codind)} — ${esc(c.periodicidad)} · id_cumplimiento ${c.id}</div>
+          <div class="meta-red"><b>META ${c.estado === 'Pendiente' ? 'EN REVISIÓN' : c.estado.toUpperCase()}:</b> ${esc(c.meta)} · Meta del cuatrienio: ${esc(c.metacuatrienio)}</div>
+        </div>
+        <div class="kv"><small>Avance</small><b>${esc(c.avance)}</b></div>
+        <div class="kv"><small>Cumplimiento</small><b>${esc(c.porcentaje)}%</b></div>
+        <div class="kv"><small>Registrado</small><b>${fechaCorta(c.fecha)}</b></div>
+        <div><span class="pill ${esc(c.estado)}">${esc(c.estado)}</span> <button class="ver" type="button" data-id="${c.id}">ver</button></div>
+      </article>`).join('')
+      : '<div class="vacio">No hay cumplimientos con estos filtros. Cambia el estado o el periodo para ver otros.</div>';
+  }
+
+  // Aquí conectas la pantalla de detalle cuando la tengas
+  function verCumplimiento(id){ location.href = '/registro-avance-evidencia.html?id=' + id; }
+
+  $('lista').addEventListener('click', e => { const b = e.target.closest('.ver'); if(b) verCumplimiento(b.dataset.id); });
+  ['fBuscar','fEstado','fPeriodo'].forEach(id => $(id).addEventListener('input', pintar));
+  $('btnSalir').addEventListener('click', async () => {
+    try{ await fetch(tipoSesion === 'admin' ? '/api/logout' : '/api/gestor/logout', {method:'POST'}); }catch(e){ /* sin servidor: igual se vuelve al inicio de sesión */ }
+    location.href = '/iniciar-sesion.html';
+  });
+
+  // Menú desplegable del rol: se cierra con Esc, al tocar fuera o al salir con el teclado
+  const rolMenu = $('rolMenu'), btnRol = $('btnRol'), userWrap = $('userWrap');
+  function abrirRol(){ rolMenu.classList.add('open'); btnRol.setAttribute('aria-expanded', 'true'); }
+  function cerrarRol(foco){ if(!rolMenu.classList.contains('open')) return; rolMenu.classList.remove('open'); btnRol.setAttribute('aria-expanded', 'false'); if(foco) btnRol.focus(); }
+  btnRol.addEventListener('click', () => rolMenu.classList.contains('open') ? cerrarRol(false) : abrirRol());
+  btnRol.addEventListener('keydown', e => { if(e.key === 'ArrowDown'){ e.preventDefault(); abrirRol(); rolMenu.querySelector('.rol-item').focus(); } });
+  rolMenu.addEventListener('keydown', e => {
+    const items = [...rolMenu.querySelectorAll('.rol-item')], i = items.indexOf(document.activeElement);
+    if(e.key === 'ArrowDown'){ e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    if(e.key === 'ArrowUp'){ e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  });
+  document.addEventListener('click', e => { if(!userWrap.contains(e.target)) cerrarRol(false); });
+  userWrap.addEventListener('focusout', e => { if(!userWrap.contains(e.relatedTarget)) cerrarRol(false); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarRol(true); });
+
+  cargar();
+</script>
+</body>
+</html>

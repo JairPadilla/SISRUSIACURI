@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Copias de seguridad · SISR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#0F3D3B; --pine-deep:#0A2B29; --forest:#1F6F54; --paper:#F5F3EC; --card:#FFFFFF;
+    --ink:#26241F; --ink-soft:#5B5A54; --ink-faint:#8B887C; --line:#DFDACB; --track:#EBE7DA;
+    --paper-raised:#FFFFFF; --radius-m:10px; --warn:#B5502E; --warn-soft:#F6E4DA; --ochre:#B9852F; --ochre-soft:#F3E5CC; --ok:#3F8F70; --ok-soft:#DAE7E0; --bad:#A4513F; --bad-soft:#F4DEE0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Public Sans',system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Source Serif 4',Georgia,serif; color:var(--pine-deep); margin:0;}
+  button,select,input{font-family:inherit;}
+
+  /* barra superior y menú de usuario (idénticos al resto del sistema) */
+  .topbar{background:linear-gradient(180deg,var(--pine),var(--pine-deep)); color:#EFEEE6; padding:12px clamp(16px,3vw,40px); display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .nav{font-size:13px; line-height:1.4;} .nav strong{font-weight:600; color:#fff; font-family:'Source Serif 4',serif; font-size:16px;}
+  .topbar-logo{width:40px; height:40px; flex-shrink:0; display:block;}
+  .user{position:relative; margin-left:auto; flex-shrink:0;}
+  .user-btn{display:inline-flex; align-items:center; gap:10px; padding:5px 12px 5px 5px; border:1px solid var(--ochre); border-radius:999px; background:var(--paper-raised); color:var(--pine-deep); font:500 13.5px 'Public Sans',sans-serif; cursor:pointer;}
+  .user-btn .avatar{width:32px; height:32px; border-radius:50%; background:var(--pine-deep); color:#F5F3EC; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .u-ico{width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;}
+  .user-btn .chev{width:16px; height:16px; color:var(--ink-soft);}
+  @media (max-width:640px){ .user-btn{padding-right:9px;} .user-btn .rol{display:none;} }
+
+  main{max-width:1040px; margin:0 auto; padding:40px 20px 56px;}
+  .head{margin-bottom:22px;}
+  h1{font-size:clamp(26px,5vw,34px); line-height:1.15;}
+  .sub{margin:10px 0 0; color:var(--ink-soft); max-width:68ch; font-size:14.5px;}
+
+  /* indicadores */
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px;}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px 18px;}
+  .kpi b{display:block; font-family:'Source Serif 4',serif; font-size:24px; line-height:1.2; color:var(--pine-deep);}
+  .kpi b.ok{color:var(--forest);} .kpi span{font-size:12.5px; color:var(--ink-soft);}
+
+  /* tarjetas */
+  .card{background:var(--card); border:1px solid var(--line); border-left:3px solid var(--ochre); border-radius:8px; padding:20px 24px; box-shadow:0 6px 18px -14px rgba(10,43,41,.35); margin-bottom:14px;}
+  .card h2{font-size:18px;} .card .nota{margin:3px 0 16px; font-size:12.5px; color:var(--ink-soft);}
+  .card-cab{display:flex; align-items:flex-start; gap:14px; margin-bottom:14px;}
+  .card-ico{width:44px; height:44px; border-radius:10px; background:var(--paper); color:var(--pine); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid var(--line);}
+  .card-ico .u-ico{width:22px; height:22px;}
+  .card-cab p{margin:3px 0 0; font-size:13.5px; color:var(--ink-soft);}
+  .dos{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:0;}
+  .dos .card{margin-bottom:14px; display:flex; flex-direction:column;}
+  .dos .card .pie-card{margin-top:auto; padding-top:16px;}
+
+  .lista{margin:0 0 4px; padding:0; list-style:none; font-size:13px; color:var(--ink-soft);}
+  .lista li{display:flex; align-items:center; gap:9px; padding:5px 0;}
+  .lista li::before{content:""; width:7px; height:7px; border-radius:50%; background:var(--ok); flex-shrink:0;}
+
+  /* botones */
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 18px; border:1px solid var(--pine); border-radius:8px; font:600 13.5px 'Public Sans',sans-serif; cursor:pointer;}
+  .btn.primario{background:var(--pine); color:#fff;} .btn.sec{background:var(--card); color:var(--pine-deep);}
+  .btn.peligro{background:var(--warn); border-color:var(--warn); color:#fff;}
+  .btn.peq{padding:6px 12px; font-size:12.5px;}
+  .btn.bloque{width:100%;}
+  .btn:disabled,.btn.off{opacity:.5; cursor:not-allowed;}
+
+  /* zona para soltar el archivo */
+  .soltar{border:2px dashed var(--line); border-radius:10px; background:var(--paper); padding:22px 16px; text-align:center; margin-bottom:12px;}
+  .soltar .u-ico{width:28px; height:28px; color:var(--ochre); margin-bottom:4px;}
+  .soltar strong{display:block; font-size:14px; color:var(--pine-deep);}
+  .soltar span{display:block; font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
+  .soltar .btn{margin-top:12px;}
+
+  .alerta{display:flex; gap:12px; align-items:flex-start; background:var(--warn-soft); color:#7E3A20; border-radius:8px; padding:12px 14px; margin-bottom:12px; font-size:13px;}
+  .alerta .u-ico{margin-top:2px; color:var(--warn);}
+  .alerta.info{background:var(--ochre-soft); color:#7A5719;} .alerta.info .u-ico{color:var(--ochre);}
+
+  /* programación */
+  .prog-cab{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:16px;}
+  .interruptor{display:inline-flex; align-items:center; gap:10px; font-size:13.5px; font-weight:600; color:var(--pine-deep); cursor:pointer;}
+  .interruptor input{position:absolute; opacity:0; width:0; height:0;}
+  .interruptor i{position:relative; width:42px; height:24px; border-radius:999px; background:var(--track); border:1px solid var(--line); transition:background .15s;}
+  .interruptor i::after{content:""; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .15s;}
+  .interruptor input:checked + i{background:var(--forest); border-color:var(--forest);}
+  .interruptor input:checked + i::after{transform:translateX(18px);}
+  .interruptor input:focus-visible + i{outline:2px solid var(--ochre); outline-offset:2px;}
+  .form{display:grid; grid-template-columns:repeat(4,1fr); gap:14px 16px; margin-bottom:16px;}
+  .campo label{display:block; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; margin-bottom:6px;}
+  .campo select,.campo input{width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); font-size:13.5px; color:var(--ink);}
+  .campo select:focus-visible,.campo input:focus-visible{outline:2px solid var(--forest); outline-offset:1px;}
+  .prog-pie{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; padding-top:14px; border-top:1px solid var(--line);}
+  .prog-pie p{margin:0; font-size:13px; color:var(--ink-soft);} .prog-pie b{color:var(--pine-deep);}
+
+  /* historial */
+  .rotulo{display:flex; align-items:center; gap:10px; margin:22px 0 10px; font-size:12.5px; color:var(--ink-faint);}
+  .rotulo span{background:var(--ok-soft); color:var(--forest); font-weight:600; border-radius:999px; padding:1px 9px;}
+  .tabla{background:var(--card); border:1px solid var(--line); border-radius:8px; overflow-x:auto; margin-bottom:14px;}
+  table{width:100%; border-collapse:collapse; min-width:720px; font-size:13.5px;}
+  th{text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; padding:12px 16px; border-bottom:1px solid var(--line);}
+  td{padding:12px 16px; border-bottom:1px solid #EEEADD; vertical-align:middle;} tr:last-child td{border-bottom:0;}
+  td .s{font-weight:700;} td small{display:block; font-size:11.5px; color:var(--ink-soft);}
+  td.num,th.num{text-align:right; white-space:nowrap;} td.acc,th.acc{text-align:right; white-space:nowrap;}
+  td.acc .btn{margin-left:6px;}
+  .pill{font-size:11.5px; font-weight:600; padding:3px 11px; border-radius:999px; white-space:nowrap;}
+  .pill.ok{background:var(--ok-soft); color:var(--forest);} .pill.curso{background:var(--ochre-soft); color:#8F6620;} .pill.riesgo{background:var(--bad-soft); color:var(--bad);}
+  .pill.neutro{background:var(--paper); color:var(--ink-soft); border:1px solid var(--line);}
+  .nota-pie{margin:2px 0 0; font-size:12px; color:var(--ink-soft);}
+  .pie{margin-top:30px; text-align:center; font-size:11.5px; color:var(--ink-faint);}
+
+  /* menú de usuario desplegable */
+  .user-btn:hover,.user-btn[aria-expanded="true"]{background:var(--paper);}
+  .user-btn:focus-visible,.user-menu .item:focus-visible{outline:2px solid var(--ochre); outline-offset:2px;}
+  .user-btn .chev{transition:transform .2s ease;} .user-btn[aria-expanded="true"] .chev{transform:rotate(180deg);}
+  .user-menu{position:absolute; right:0; top:calc(100% + 10px); width:272px; padding:6px; background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); box-shadow:0 18px 40px -18px rgba(10,43,41,.38); opacity:0; visibility:hidden; transform:translateY(-6px); transition:opacity .15s ease, transform .15s ease, visibility 0s .15s; z-index:40;}
+  .user-menu.open{opacity:1; visibility:visible; transform:none; transition:opacity .15s ease, transform .15s ease;}
+  .user-menu .info{padding:12px 12px 11px; margin-bottom:6px; border-bottom:1px solid var(--line);}
+  .user-menu .info strong{display:block; font-size:14px; color:var(--pine-deep);} .user-menu .info span{display:block; margin-top:2px; font-size:12.5px; color:var(--ink-soft);}
+  .user-menu .item{display:flex; align-items:center; gap:11px; width:100%; padding:10px 12px; border:none; border-radius:7px; background:none; color:var(--pine-deep); font:500 14px 'Public Sans',sans-serif; text-align:left; text-decoration:none; cursor:pointer;}
+  .user-menu .item .u-ico{color:var(--ink-soft);} .user-menu .item:hover{background:var(--paper);}
+  .user-menu .item.salir:hover{background:var(--warn-soft); color:var(--warn);} .user-menu .item.salir:hover .u-ico{color:var(--warn);}
+  @media (max-width:640px){ .user-menu{width:min(272px, calc(100vw - 24px));} }
+
+  /* avisos, zona de archivo y ventana de confirmación */
+  .aviso{margin-bottom:16px;} .aviso .alerta{margin-bottom:0;}
+  .alerta.ok{background:var(--ok-soft); color:#1F5A43;} .alerta.ok .u-ico{color:var(--forest);}
+  .alerta.mal{background:var(--bad-soft); color:var(--bad);} .alerta.mal .u-ico{color:var(--bad);}
+  .soltar.activa{border-color:var(--forest); background:var(--ok-soft);}
+  .soltar.con-archivo{border-style:solid; border-color:var(--forest);}
+  .soltar .nombre{font-weight:700; word-break:break-all;}
+  .btn .giro{width:14px; height:14px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:gira .7s linear infinite;}
+  @keyframes gira{to{transform:rotate(360deg);}}
+  .btn.peligro-suave{background:var(--card); color:var(--bad); border-color:#D9B5AD;} .btn.peligro-suave:hover:not(:disabled){background:var(--bad-soft);}
+  .btn:focus-visible{outline:2px solid var(--ochre); outline-offset:2px;}
+  .campo select:disabled{background:var(--paper); color:var(--ink-faint); cursor:not-allowed;}
+  .campo .ayuda{margin-top:5px; font-size:11.5px; color:var(--ink-faint);}
+  dialog{border:1px solid var(--line); border-top:4px solid var(--ochre); border-radius:10px; padding:24px 26px; width:min(460px, calc(100vw - 32px)); color:var(--ink); box-shadow:0 30px 70px -20px rgba(10,43,41,.5);}
+  dialog::backdrop{background:rgba(10,43,41,.45);}
+  dialog h3{font-size:19px; margin-bottom:8px;} dialog p{margin:0 0 12px; font-size:13.5px; color:var(--ink-soft);}
+  dialog .campo{margin:14px 0 4px;} dialog .campo input{text-transform:uppercase; letter-spacing:.08em; font-weight:600;}
+  dialog .botones{display:flex; justify-content:flex-end; gap:10px; margin-top:18px;}
+  .tabla th,.tabla td{padding-left:10px; padding-right:10px;} .tabla td:nth-child(3){font-size:12.5px; word-break:break-all;} td .s{white-space:nowrap;}
+  .btn.icono{padding:6px 9px;}
+  td.vacio{text-align:center; color:var(--ink-soft); padding:26px;}
+  @media (max-width:860px){ .kpis{grid-template-columns:1fr 1fr;} .dos{grid-template-columns:1fr;} .form{grid-template-columns:1fr 1fr;} }
+  @media (max-width:520px){ .form{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="u-usuario" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="u-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="u-descargar" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="u-subir" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+    <symbol id="u-base" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></symbol>
+    <symbol id="u-aviso" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="u-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+    <symbol id="u-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="u-inicio" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="u-salir" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="u-papelera" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></symbol>
+    <symbol id="u-ok" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+    <symbol id="u-restaurar" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/></symbol></defs></svg>
+  <svg class="topbar-logo" viewBox="0 0 100 100" role="img" aria-label="Logo del SISR">
+    <circle cx="50" cy="50" r="50" fill="#B9852F"/>
+    <circle cx="50" cy="50" r="43.5" fill="#0C3432"/>
+    <rect x="31" y="57" width="8" height="12" rx="1" fill="#D9A94F"/>
+    <rect x="44" y="48" width="8" height="21" rx="1" fill="#D9A94F"/>
+    <rect x="57" y="37.5" width="8" height="31.5" rx="1" fill="#D9A94F"/>
+    <polyline points="26.5,31.6 39.2,44.4 75.4,14.1" fill="none" stroke="#F5F3EC" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="nav"><strong>Copias de seguridad</strong></div>
+  <div class="user" id="user">
+    <button class="user-btn" id="btnUsuario" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu">
+      <span class="avatar"><svg class="u-ico" aria-hidden="true"><use href="#u-usuario"/></svg></span>
+      <span class="rol" id="rolTxt">Rol: …</span>
+      <svg class="u-ico chev" aria-hidden="true"><use href="#u-abajo"/></svg>
+    </button>
+    <div class="user-menu" id="userMenu" role="menu" aria-label="Menú de usuario">
+      <div class="info"><strong id="rolMenu">Rol: …</strong><span id="vistaMenu">SISR</span></div>
+      <a class="item" role="menuitem" href="panel-administrativo%20(1).html"><svg class="u-ico" aria-hidden="true"><use href="#u-inicio"/></svg>Panel principal</a>
+      <button class="item salir" id="btnSalir" role="menuitem" type="button"><svg class="u-ico" aria-hidden="true"><use href="#u-salir"/></svg>Cerrar sesión</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="head">
+    <h1>Copias de seguridad</h1>
+    <p class="sub">Protege la información del sistema. Exporta una copia de la base de datos para guardarla fuera del servidor, impórtala para restaurar el sistema si llega a fallar y programa copias automáticas periódicas.</p>
+  </div>
+
+  <div class="aviso" id="aviso" role="status" aria-live="polite"></div>
+
+  <!-- Estado general -->
+  <section class="kpis" aria-label="Estado de las copias">
+    <div class="kpi"><b id="kUltima">–</b><span>Última copia exitosa</span></div>
+    <div class="kpi"><b id="kTotal">–</b><span>Copias guardadas</span></div>
+    <div class="kpi"><b id="kTamano">–</b><span>Tamaño de la base de datos</span></div>
+    <div class="kpi"><b id="kProxima">–</b><span>Próxima copia programada</span></div>
+  </section>
+
+  <!-- Exportar / Importar -->
+  <section class="dos">
+    <article class="card">
+      <div class="card-cab">
+        <div class="card-ico"><svg class="u-ico" aria-hidden="true"><use href="#u-descargar"/></svg></div>
+        <div>
+          <h2>Exportar base de datos</h2>
+          <p>Descarga una copia completa del sistema a este computador.</p>
+        </div>
+      </div>
+      <ul class="lista">
+        <li>Usuarios, gestores y asignaciones</li>
+        <li>Líneas estratégicas, programas y productos</li>
+        <li>Avances reportados y sus evidencias</li>
+        <li>Marca institucional (nombre y logo)</li>
+      </ul>
+      <div class="alerta info" style="margin-top:12px;"><svg class="u-ico" aria-hidden="true"><use href="#u-info"/></svg><span>El archivo se descarga como <b>sisr_respaldo_AAAA-MM-DD_HHMMSS.db</b>. Guárdalo en un lugar seguro, por ejemplo una memoria USB o la nube institucional. Además queda una copia en el servidor (carpeta <b>respaldos</b>) y aparece en el historial.</span></div>
+      <div class="pie-card"><button class="btn primario bloque" id="btnExportar" type="button"><svg class="u-ico" aria-hidden="true"><use href="#u-descargar"/></svg><span>Exportar base de datos</span></button></div>
+    </article>
+
+    <article class="card">
+      <div class="card-cab">
+        <div class="card-ico"><svg class="u-ico" aria-hidden="true"><use href="#u-subir"/></svg></div>
+        <div>
+          <h2>Importar base de datos</h2>
+          <p>Restaura el sistema desde un archivo de respaldo.</p>
+        </div>
+      </div>
+      <div class="soltar" id="soltar">
+        <svg class="u-ico" aria-hidden="true"><use href="#u-base"/></svg>
+        <strong id="soltarTitulo">Arrastra aquí el archivo de respaldo</strong>
+        <span id="soltarSub">Formato .db · tamaño máximo 100 MB</span>
+        <input type="file" id="archivo" accept=".db,.sqlite,.sqlite3" hidden>
+        <button class="btn sec peq" id="btnSeleccionar" type="button">Seleccionar archivo</button>
+      </div>
+      <div class="alerta"><svg class="u-ico" aria-hidden="true"><use href="#u-aviso"/></svg><span><b>Atención:</b> al importar se reemplaza toda la información actual. Antes de restaurar, el sistema guardará automáticamente una copia de la base vigente.</span></div>
+      <div class="pie-card"><button class="btn peligro bloque off" id="btnImportar" type="button" disabled><svg class="u-ico" aria-hidden="true"><use href="#u-subir"/></svg><span>Importar base de datos</span></button></div>
+    </article>
+  </section>
+
+  <!-- Programación de copias periódicas -->
+  <section class="card" aria-label="Copias automáticas">
+    <div class="prog-cab">
+      <div class="card-cab" style="margin:0;">
+        <div class="card-ico"><svg class="u-ico" aria-hidden="true"><use href="#u-reloj"/></svg></div>
+        <div>
+          <h2>Copias automáticas periódicas</h2>
+          <p>El sistema genera la copia por sí solo, sin que nadie tenga que acordarse.</p>
+        </div>
+      </div>
+      <label class="interruptor"><input type="checkbox" id="swActivo" checked><i></i><span id="swTxt">Copias automáticas activadas</span></label>
+    </div>
+    <div class="form">
+      <div class="campo"><label for="frec">Frecuencia</label>
+        <select id="frec"><option value="diaria">Diaria</option><option value="semanal" selected>Semanal</option><option value="mensual">Mensual</option></select></div>
+      <div class="campo"><label for="dia">Día</label>
+        <select id="dia"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6" selected>Sábado</option><option value="0">Domingo</option></select>
+        <div class="ayuda" id="diaAyuda"></div></div>
+      <div class="campo"><label for="hora">Hora</label><input id="hora" type="time" value="02:00"></div>
+      <div class="campo"><label for="ret">Copias automáticas a conservar</label>
+        <select id="ret"><option value="5">5 copias</option><option value="10">10 copias</option><option value="12" selected>12 copias</option><option value="20">20 copias</option><option value="30">30 copias</option></select></div>
+    </div>
+    <div class="prog-pie">
+      <p id="progTxt">Próxima copia: <b>–</b> · Cuando se supere el límite, se elimina la copia automática más antigua. Las copias manuales y previas nunca se borran solas.</p>
+      <button class="btn primario" id="btnGuardar" type="button"><span>Guardar programación</span></button>
+    </div>
+  </section>
+
+  <!-- Historial -->
+  <div class="rotulo">Historial de copias <span id="nHist">0</span></div>
+  <div class="tabla">
+    <table>
+      <thead><tr><th>Fecha y hora</th><th>Tipo</th><th>Archivo</th><th class="num">Tamaño</th><th>Estado</th><th class="acc">Acciones</th></tr></thead>
+      <tbody id="historial"><tr><td class="vacio" colspan="6">Cargando…</td></tr></tbody>
+    </table>
+  </div>
+  <p class="nota-pie" id="notaPie">Solo el Superadministrador puede usar este módulo.</p>
+
+  <p class="pie">SISR · Sistema de Seguimiento y Cumplimiento del Plan de Desarrollo y Rendición de Cuentas</p>
+</main>
+
+<dialog id="modal" aria-labelledby="mTitulo">
+  <h3 id="mTitulo">Confirmar</h3>
+  <p id="mTexto"></p>
+  <div class="campo" id="mCampo" hidden><label for="mEscribe" id="mEtiqueta">Escribe RESTAURAR para confirmar</label><input id="mEscribe" type="text" autocomplete="off" spellcheck="false"></div>
+  <div class="botones"><button class="btn sec" id="mCancelar" type="button">Cancelar</button><button class="btn peligro" id="mAceptar" type="button">Confirmar</button></div>
+</dialog>
+
+<script>
+/* ============================================================
+   COPIAS DE SEGURIDAD · se conecta a /api/respaldo (solo Superadministrador)
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const MAX_MB = 100;
+let E = null, archivoSel = null, ocupado = false;
+
+/* ---------- formato ---------- */
+const aFecha = s => new Date(String(s).replace(' ', 'T'));
+const dec = (n, d = 1) => { let t = (Math.round(n * 10 ** d) / 10 ** d).toFixed(d); if(t.includes('.')) t = t.replace(/0+$/, '').replace(/\.$/, ''); return t.replace('.', ','); };
+const tam = b => b >= 1048576 ? dec(b / 1048576) + ' MB' : b >= 1024 ? dec(b / 1024, 0) + ' KB' : b + ' B';
+const hora12 = d => { let h = d.getHours(); const ap = h >= 12 ? 'p. m.' : 'a. m.'; h = h % 12 || 12; return h + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + ap; };
+const fechaCorta = d => d.getDate() + ' ' + MES[d.getMonth()] + ' ' + d.getFullYear();
+const mismoDia = (x, y) => x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
+function relativo(s){
+  const min = Math.round((aFecha(E.ahora) - aFecha(s)) / 60000);
+  if(min < 1) return 'Hace un momento';
+  if(min < 60) return 'Hace ' + min + (min === 1 ? ' minuto' : ' minutos');
+  const h = Math.floor(min / 60);
+  if(h < 24) return 'Hace ' + h + (h === 1 ? ' hora' : ' horas');
+  const d = Math.floor(h / 24);
+  return 'Hace ' + d + (d === 1 ? ' día' : ' días');
+}
+function proximaTxt(s){
+  if(!s) return 'Desactivadas';
+  const d = aFecha(s), a = aFecha(E.ahora), man = new Date(a.getFullYear(), a.getMonth(), a.getDate() + 1);
+  if(mismoDia(d, a)) return 'Hoy, ' + hora12(d);
+  if(mismoDia(d, man)) return 'Mañana, ' + hora12(d);
+  return DIAS[d.getDay()].slice(0, 3) + ' ' + d.getDate() + ' ' + MES[d.getMonth()] + ', ' + hora12(d);
+}
+
+/* ---------- avisos, botones ocupados y ventana de confirmación ---------- */
+function aviso(tipo, texto){
+  const ico = tipo === 'ok' ? 'u-ok' : tipo === 'mal' ? 'u-aviso' : 'u-info';
+  $('aviso').innerHTML = '<div class="alerta ' + tipo + '"><svg class="u-ico" aria-hidden="true"><use href="#' + ico + '"/></svg><span>' + texto + '</span></div>';
+  $('aviso').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function ocupando(idBtn, on, texto){
+  ocupado = on;
+  const b = $(idBtn), et = b.querySelector('span');
+  if(on){ b.dataset.txt = et.textContent; et.textContent = texto; b.insertAdjacentHTML('afterbegin', '<i class="giro"></i>'); }
+  else { const g = b.querySelector('.giro'); if(g) g.remove(); et.textContent = b.dataset.txt || et.textContent; }
+  actualizarBotones();
+}
+function actualizarBotones(){
+  const sinAcceso = !E;
+  $('btnExportar').disabled = ocupado || sinAcceso;
+  $('btnSeleccionar').disabled = ocupado || sinAcceso;
+  $('btnGuardar').disabled = ocupado || sinAcceso;
+  $('btnImportar').disabled = ocupado || sinAcceso || !archivoSel;
+  $('btnImportar').classList.toggle('off', $('btnImportar').disabled);
+  document.querySelectorAll('#historial button').forEach(b => { b.disabled = ocupado || b.dataset.off === '1'; });
+}
+function confirmar({ titulo, texto, exigir, boton, peligro = true }){
+  return new Promise(resolver => {
+    const m = $('modal'), campo = $('mCampo'), inp = $('mEscribe'), ac = $('mAceptar');
+    $('mTitulo').textContent = titulo; $('mTexto').innerHTML = texto;
+    campo.hidden = !exigir; inp.value = ''; if(exigir) $('mEtiqueta').textContent = 'Escribe ' + exigir + ' para confirmar';
+    ac.textContent = boton; ac.className = 'btn ' + (peligro ? 'peligro' : 'primario'); ac.disabled = !!exigir;
+    inp.oninput = () => { ac.disabled = inp.value.trim().toUpperCase() !== exigir; };
+    inp.onkeydown = e => { if(e.key === 'Enter' && !ac.disabled) m.close('ok'); };
+    ac.onclick = () => m.close('ok'); $('mCancelar').onclick = () => m.close('no');
+    m.onclose = () => resolver(m.returnValue === 'ok');
+    m.returnValue = ''; m.showModal(); (exigir ? inp : $('mCancelar')).focus();
+  });
+}
+
+/* ---------- comunicación con el servidor ---------- */
+async function api(ruta, op){
+  const r = await fetch(ruta, op);
+  if(r.status === 401){ location.href = '/iniciar-sesion.html?volver=/copias-de-seguridad.html'; throw new Error('sesion'); }
+  return r;
+}
+const errorDe = async r => { try{ return (await r.json()).error || 'Error ' + r.status; }catch(e){ return 'Error ' + r.status; } };
+function bajar(blob, nombre){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+const nombreDeRespuesta = (r, defecto) => ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || defecto;
+const falloConexion = e => { if(e.message !== 'sesion') aviso('mal', 'No se pudo completar la operación. Comprueba que "node server.js" esté en ejecución.'); };
+
+async function cargar(forzarForm){
+  try{
+    const r = await api('/api/respaldo');
+    if(r.status === 403){ $('rolTxt').textContent = 'Sin acceso'; aviso('mal', esc(await errorDe(r))); $('historial').innerHTML = '<tr><td class="vacio" colspan="6">Este módulo es solo para el Superadministrador.</td></tr>'; actualizarBotones(); return; }
+    if(!r.ok){ aviso('mal', esc(await errorDe(r))); return; }
+    const primera = !E;
+    E = await r.json();
+    pintar(primera || forzarForm);
+  }catch(e){ falloConexion(e); }
+}
+
+/* ---------- pintar ---------- */
+function pintar(llenarForm){
+  $('rolTxt').textContent = 'Rol: ' + E.rol; $('rolMenu').textContent = 'Rol: ' + E.rol; $('vistaMenu').textContent = E.nombre;
+  $('kUltima').textContent = E.ultima ? relativo(E.ultima.fecha) : 'Sin copias';
+  $('kUltima').className = E.ultima ? 'ok' : '';
+  $('kTotal').textContent = E.total;
+  $('kTamano').textContent = tam(E.tamanoBD);
+  $('kProxima').textContent = proximaTxt(E.proxima);
+  $('progTxt').innerHTML = (E.proxima ? 'Próxima copia: <b>' + esc(proximaTxt(E.proxima)) + '</b>' : '<b>Copias automáticas desactivadas</b>') +
+    ' · Cuando se supere el límite, se elimina la copia automática más antigua. Las copias manuales y previas nunca se borran solas.';
+  $('notaPie').textContent = 'Las copias se guardan en el servidor, en la carpeta: ' + E.carpeta + '. Solo el Superadministrador puede usar este módulo.';
+  if(llenarForm) llenarFormulario();
+
+  $('nHist').textContent = E.historial.length;
+  const TIPO = { manual: ['Manual', 'neutro'], automatica: ['Automática', 'neutro'], previa: ['Previa a restaurar', 'curso'] };
+  $('historial').innerHTML = E.historial.length ? E.historial.map(h => {
+    const d = aFecha(h.fecha), t = TIPO[h.tipo] || [h.tipo, 'neutro'];
+    const estado = h.estado === 'error' ? '<span class="pill riesgo">Con error</span>' + (h.detalle ? '<small>' + esc(h.detalle) + '</small>' : '')
+      : h.disponible ? '<span class="pill ok">Completada</span>' : '<span class="pill neutro">Archivo no encontrado</span>';
+    const btn = (accion, ico, texto, extra = '', off = false, soloIcono = false) => '<button class="btn ' + extra + (soloIcono ? ' icono' : '') + ' peq" type="button" data-accion="' + accion + '" data-id="' + h.id + '"' + (soloIcono ? ' title="' + texto + '" aria-label="' + texto + '"' : '') + (off ? ' data-off="1" disabled' : '') + '><svg class="u-ico" aria-hidden="true"><use href="#' + ico + '"/></svg>' + (soloIcono ? '' : texto) + '</button>';
+    return '<tr><td><span class="s">' + fechaCorta(d) + '</span><small>' + hora12(d) + ' · ' + esc(h.creadoPor || '') + '</small></td>' +
+      '<td><span class="pill ' + t[1] + '">' + t[0] + '</span></td><td>' + esc(h.archivo) + '</td><td class="num">' + (h.estado === 'error' ? '–' : tam(h.tamano)) + '</td><td>' + estado + '</td>' +
+      '<td class="acc">' + btn('descargar', 'u-descargar', 'Descargar', 'sec', !h.disponible) + btn('restaurar', 'u-restaurar', 'Restaurar', 'sec', !h.disponible) + btn('eliminar', 'u-papelera', 'Eliminar', 'peligro-suave', false, true) + '</td></tr>';
+  }).join('') : '<tr><td class="vacio" colspan="6">Todavía no hay copias. Usa «Exportar base de datos» para crear la primera.</td></tr>';
+  actualizarBotones();
+}
+function llenarFormulario(){
+  const c = E.config;
+  $('swActivo').checked = c.activo; $('frec').value = c.frecuencia; $('dia').value = String(c.dia); $('hora').value = c.hora;
+  if(![...$('ret').options].some(o => Number(o.value) === c.retencion)) $('ret').add(new Option(c.retencion + ' copias', c.retencion));
+  $('ret').value = String(c.retencion);
+  actualizarFormulario();
+}
+function actualizarFormulario(){
+  const f = $('frec').value;
+  $('dia').disabled = f !== 'semanal';
+  $('diaAyuda').textContent = f === 'diaria' ? 'Se hace todos los días' : f === 'mensual' ? 'Se hace el día 1 de cada mes' : '';
+  $('swTxt').textContent = $('swActivo').checked ? 'Copias automáticas activadas' : 'Copias automáticas desactivadas';
+}
+
+/* ---------- exportar ---------- */
+async function exportar(){
+  if(ocupado) return;
+  ocupando('btnExportar', true, 'Generando copia…');
+  try{
+    const r = await api('/api/respaldo/exportar', { method: 'POST' });
+    if(!r.ok){ aviso('mal', esc(await errorDe(r))); return; }
+    const nombre = nombreDeRespuesta(r, 'sisr_respaldo.db');
+    bajar(await r.blob(), nombre);
+    aviso('ok', 'Copia exportada: <b>' + esc(nombre) + '</b>. Guárdala en un lugar seguro; también quedó en el historial.');
+    ocupando('btnExportar', false); await cargar();
+  }catch(e){ falloConexion(e); }
+  finally{ if(ocupado) ocupando('btnExportar', false); }
+}
+
+/* ---------- importar ---------- */
+function elegirArchivo(f){
+  if(!f) return;
+  if(!/\.(db|sqlite|sqlite3)$/i.test(f.name)){ aviso('mal', 'El archivo debe ser un respaldo con extensión <b>.db</b>.'); return; }
+  if(!f.size){ aviso('mal', 'El archivo está vacío.'); return; }
+  if(f.size > MAX_MB * 1048576){ aviso('mal', 'El archivo supera el máximo de ' + MAX_MB + ' MB.'); return; }
+  archivoSel = f; $('aviso').innerHTML = '';
+  $('soltar').classList.add('con-archivo');
+  $('soltarTitulo').innerHTML = '<span class="nombre">' + esc(f.name) + '</span>';
+  $('soltarSub').textContent = tam(f.size) + ' · listo para importar';
+  $('btnSeleccionar').textContent = 'Cambiar archivo';
+  actualizarBotones();
+}
+function limpiarArchivo(){
+  archivoSel = null; $('archivo').value = '';
+  $('soltar').classList.remove('con-archivo');
+  $('soltarTitulo').textContent = 'Arrastra aquí el archivo de respaldo';
+  $('soltarSub').textContent = 'Formato .db · tamaño máximo ' + MAX_MB + ' MB';
+  $('btnSeleccionar').textContent = 'Seleccionar archivo';
+  actualizarBotones();
+}
+async function importar(){
+  if(!archivoSel || ocupado) return;
+  const ok = await confirmar({ titulo: 'Importar base de datos', exigir: 'RESTAURAR', boton: 'Importar y reemplazar',
+    texto: 'Se reemplazará <b>toda la información actual</b> del sistema con el contenido de <b>' + esc(archivoSel.name) + '</b> (' + tam(archivoSel.size) + '). Antes se guardará una copia de la base vigente para que puedas deshacer el cambio.' });
+  if(!ok) return;
+  ocupando('btnImportar', true, 'Importando…');
+  try{
+    const r = await api('/api/respaldo/importar', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Confirmacion': 'RESTAURAR' }, body: archivoSel });
+    if(!r.ok){ aviso('mal', esc(await errorDe(r))); return; }
+    const d = await r.json();
+    limpiarArchivo();
+    aviso('ok', 'Base de datos importada correctamente. La base anterior quedó guardada como <b>' + esc(d.previa) + '</b>.');
+    ocupando('btnImportar', false); await cargar(true);
+  }catch(e){ falloConexion(e); }
+  finally{ if(ocupado) ocupando('btnImportar', false); }
+}
+
+/* ---------- acciones del historial ---------- */
+async function accionHistorial(accion, id){
+  const h = E.historial.find(x => x.id === id);
+  if(!h || ocupado) return;
+  const d = aFecha(h.fecha), cuando = fechaCorta(d) + ', ' + hora12(d);
+  try{
+    if(accion === 'descargar'){
+      const r = await api('/api/respaldo/' + id + '/descargar');
+      if(!r.ok){ aviso('mal', esc(await errorDe(r))); return; }
+      bajar(await r.blob(), nombreDeRespuesta(r, h.archivo));
+    }else if(accion === 'restaurar'){
+      const ok = await confirmar({ titulo: 'Restaurar esta copia', exigir: 'RESTAURAR', boton: 'Restaurar',
+        texto: 'Se reemplazará <b>toda la información actual</b> con la copia del <b>' + esc(cuando) + '</b> (' + esc(h.archivo) + '). Antes se guardará una copia de la base vigente para que puedas deshacer el cambio.' });
+      if(!ok) return;
+      ocupado = true; actualizarBotones(); aviso('info', 'Restaurando la copia… no cierres esta página.');
+      const r = await api('/api/respaldo/' + id + '/restaurar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirmacion: 'RESTAURAR' }) });
+      ocupado = false;
+      if(!r.ok){ aviso('mal', esc(await errorDe(r))); actualizarBotones(); return; }
+      const j = await r.json();
+      aviso('ok', 'Copia restaurada correctamente. La base anterior quedó guardada como <b>' + esc(j.previa) + '</b>.');
+      await cargar(true);
+    }else if(accion === 'eliminar'){
+      const ok = await confirmar({ titulo: 'Eliminar copia', boton: 'Eliminar',
+        texto: 'Se eliminará del servidor la copia del <b>' + esc(cuando) + '</b> (' + esc(h.archivo) + '). Esta acción no se puede deshacer.' });
+      if(!ok) return;
+      ocupado = true; actualizarBotones();
+      const r = await api('/api/respaldo/' + id, { method: 'DELETE' });
+      ocupado = false;
+      if(!r.ok){ aviso('mal', esc(await errorDe(r))); actualizarBotones(); return; }
+      aviso('ok', 'Copia eliminada.'); await cargar();
+    }
+  }catch(e){ ocupado = false; actualizarBotones(); falloConexion(e); }
+}
+
+/* ---------- programación ---------- */
+async function guardarProgramacion(){
+  if(ocupado) return;
+  if(!$('hora').value){ aviso('mal', 'Indica la hora en que se hará la copia.'); return; }
+  const cuerpo = { activo: $('swActivo').checked, frecuencia: $('frec').value, dia: Number($('dia').value), hora: $('hora').value, retencion: Number($('ret').value) };
+  ocupando('btnGuardar', true, 'Guardando…');
+  try{
+    const r = await api('/api/respaldo/programacion', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+    if(!r.ok){ aviso('mal', esc(await errorDe(r))); return; }
+    E = await r.json(); ocupando('btnGuardar', false); pintar(true);
+    aviso('ok', E.proxima ? 'Programación guardada. Próxima copia automática: <b>' + esc(proximaTxt(E.proxima)) + '</b>' : 'Programación guardada. Las copias automáticas quedaron desactivadas.');
+  }catch(e){ falloConexion(e); }
+  finally{ if(ocupado) ocupando('btnGuardar', false); }
+}
+
+/* ---------- eventos ---------- */
+$('btnExportar').addEventListener('click', exportar);
+$('btnImportar').addEventListener('click', importar);
+$('btnGuardar').addEventListener('click', guardarProgramacion);
+$('btnSeleccionar').addEventListener('click', () => $('archivo').click());
+$('archivo').addEventListener('change', e => elegirArchivo(e.target.files[0]));
+$('frec').addEventListener('change', actualizarFormulario);
+$('swActivo').addEventListener('change', actualizarFormulario);
+$('historial').addEventListener('click', e => { const b = e.target.closest('button[data-accion]'); if(b) accionHistorial(b.dataset.accion, Number(b.dataset.id)); });
+const zona = $('soltar');
+['dragenter', 'dragover'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); if(!ocupado) zona.classList.add('activa'); }));
+['dragleave', 'drop'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove('activa'); }));
+zona.addEventListener('drop', e => { if(!ocupado) elegirArchivo(e.dataTransfer.files[0]); });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+/* menú de usuario */
+const btnUsuario = $('btnUsuario'), userMenu = $('userMenu');
+function cerrarMenu(foco){ if(!userMenu.classList.contains('open')) return; userMenu.classList.remove('open'); btnUsuario.setAttribute('aria-expanded', 'false'); if(foco) btnUsuario.focus(); }
+btnUsuario.addEventListener('click', e => { e.stopPropagation(); const abrir = !userMenu.classList.contains('open'); userMenu.classList.toggle('open', abrir); btnUsuario.setAttribute('aria-expanded', String(abrir)); });
+document.addEventListener('click', e => { if(!e.target.closest('#user')) cerrarMenu(false); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarMenu(true); });
+$('btnSalir').addEventListener('click', async () => { try{ await fetch('/api/logout', { method: 'POST' }); }catch(e){} location.href = '/iniciar-sesion.html'; });
+
+actualizarBotones();
+cargar(true);
+setInterval(() => { if(!ocupado && !$('modal').open) cargar(); }, 60000);     // mantiene al día los indicadores y el historial
+</script>
+
+</body>
+</html>

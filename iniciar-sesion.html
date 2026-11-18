@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inicio de sesión · SISR</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23B9852F'/%3E%3Ccircle cx='50' cy='50' r='43.5' fill='%230C3432'/%3E%3Cpolyline points='26.5,31.6 39.2,44.4 75.4,14.1' fill='none' stroke='%23F5F3EC' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#0F3D3B; --pine-deep:#0A2B29; --forest:#1F6F54; --forest-soft:#E7EFE9; --forest-pill:#DAE7E0;
+    --paper:#F5F3EC; --paper-raised:#FFFFFF; --ink:#26241F; --ink-soft:#5B5A54; --ink-faint:#8B887C;
+    --line:#DFDACB; --ochre:#B9852F; --ochre-deep:#8F6620; --warn:#B5502E;
+    --radius-s:6px; --radius-m:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper); color:var(--ink); font-family:'Public Sans', system-ui, sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; min-height:100vh;}
+  h1,h2{font-family:'Source Serif 4', Georgia, serif; font-weight:600; color:var(--pine-deep); margin:0;}
+  button{font-family:inherit;}
+
+  /* ---------- barra superior ---------- */
+  .topbar{background:linear-gradient(180deg,var(--pine) 0%, var(--pine-deep) 100%); color:#EFEEE6; padding:20px clamp(20px,4vw,56px); display:flex; align-items:center; gap:14px;}
+  .topbar-logo{width:38px; height:38px; flex-shrink:0; display:block;}
+  .topbar .title{font-family:'Source Serif 4',serif;font-size:18px;font-weight:600;color:#FAF9F2;}
+
+  main{max-width:480px; margin:0 auto; padding:clamp(28px,5vw,52px) 20px 56px; opacity:0; animation:rise .5s ease forwards;}
+  @keyframes rise{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  /* ---------- marca ---------- */
+  .brand{text-align:center; margin-bottom:34px;}
+  .brand-logo{width:clamp(92px,22vw,112px); height:auto; display:block; margin:0 auto 14px; filter:drop-shadow(0 6px 14px rgba(15,61,59,.22));}
+  .brand-name{display:flex; align-items:baseline; justify-content:center; gap:12px;}
+  .brand-name .sisr{font-family:'Source Serif 4', Georgia, serif; font-weight:700; font-size:clamp(40px,9vw,50px); line-height:1; letter-spacing:.01em; color:var(--pine-deep);}
+  .brand-name .version{font-size:12.5px; font-weight:600; color:var(--forest); background:var(--forest-pill); padding:4px 12px; border-radius:999px; white-space:nowrap;}
+  .brand-sub{margin:14px auto 0; max-width:400px; font-size:clamp(11px,3vw,12.5px); font-weight:600; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-soft); line-height:1.75;}
+
+  /* ---------- bienvenida ---------- */
+  .lead{margin-bottom:22px;}
+  .lead h1{font-size:clamp(26px,5.4vw,32px); line-height:1.15; letter-spacing:-.01em;}
+  .lead p{color:var(--ink-soft); margin:10px 0 0; font-size:15px; max-width:46ch;}
+
+  /* ---------- tarjeta ---------- */
+  .card{background:var(--paper-raised); border:1px solid var(--line); border-left:3px solid var(--ochre); border-radius:var(--radius-m); padding:26px clamp(20px,4vw,30px) 24px; box-shadow:0 1px 2px rgba(10,43,41,.04), 0 10px 28px rgba(10,43,41,.06);}
+  .card .head{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px;}
+  .card h2{font-size:19px;}
+  .role-pill{font-size:12px; font-weight:600; padding:4px 11px; border-radius:999px; background:var(--forest-pill); color:var(--forest);}
+
+  .section-label{display:flex; align-items:center; gap:12px; margin-bottom:16px; font-size:11.5px; color:var(--ink-faint);}
+  .section-label::after{content:""; flex:1; border-top:1px dashed var(--line);}
+
+  .field + .field{margin-top:16px;}
+  .field label, .label-row label{display:block; font-size:13px; font-weight:600; color:var(--pine-deep); margin-bottom:6px;}
+  .label-row{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+  .field input[type="email"], .field input[type="password"], .field input[type="text"]{
+    width:100%; font-family:inherit; font-size:15px; padding:11px 12px;
+    border:1px solid var(--line); border-radius:var(--radius-s); background:#FCFBF7; color:var(--ink);
+    transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .field input::placeholder{color:#A6A296;}
+  .field input:focus{outline:none; border-color:var(--forest); background:#fff; box-shadow:0 0 0 3px var(--forest-soft);}
+
+  .link{appearance:none; border:none; background:none; padding:0; cursor:pointer; font-size:12.5px; font-weight:500; color:var(--forest); text-decoration:none;}
+  .link:hover{text-decoration:underline;}
+  .link:focus-visible{outline:2px solid var(--forest); outline-offset:2px; border-radius:3px;}
+  .link.strong{font-weight:600; font-size:inherit;}
+
+  .check{display:flex; align-items:center; gap:9px; margin-top:16px; font-size:13px; color:var(--ink); cursor:pointer;}
+  .check input{width:16px; height:16px; margin:0; accent-color:var(--pine-deep); cursor:pointer;}
+
+  .error{display:none; margin-top:16px; padding:11px 14px; border:1px solid var(--warn); border-left-width:4px; border-radius:var(--radius-s); background:#FBEFEA; color:var(--warn); font-size:13.5px; line-height:1.5;}
+
+  .btn{appearance:none; font-weight:600; font-size:15px; padding:12px 22px; border-radius:var(--radius-s); cursor:pointer; border:1px solid var(--pine-deep); background:var(--pine-deep); color:#fff; width:100%; margin-top:20px; transition:background .15s ease, border-color .15s ease, opacity .15s ease, transform .1s ease;}
+  .btn:hover:not(:disabled){background:var(--forest); border-color:var(--forest);}
+  .btn:active{transform:scale(.99);}
+  .btn:focus-visible{outline:2px solid var(--ochre); outline-offset:2px;}
+  .btn:disabled{opacity:.6; cursor:not-allowed;}
+
+  .help{margin:18px 0 0; text-align:center; font-size:13px; color:var(--ink-soft);}
+  .info{display:none; margin-top:14px; padding:11px 14px; border-left:3px solid var(--forest); border-radius:var(--radius-s); background:var(--forest-soft); color:var(--pine-deep); font-size:13px; line-height:1.55;}
+
+  .foot{margin:26px 0 0; text-align:center; font-size:11.5px; color:var(--ink-faint); line-height:1.6;}
+
+  @media (prefers-reduced-motion:reduce){ main{animation:none; opacity:1;} *{transition:none !important;} }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <svg class="topbar-logo" viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="50" fill="#B9852F"/>
+    <circle cx="50" cy="50" r="43.5" fill="#0C3432"/>
+    <rect x="31" y="57" width="8" height="12" rx="1" fill="#D9A94F"/>
+    <rect x="44" y="48" width="8" height="21" rx="1" fill="#D9A94F"/>
+    <rect x="57" y="37.5" width="8" height="31.5" rx="1" fill="#D9A94F"/>
+    <polyline points="26.5,31.6 39.2,44.4 75.4,14.1" fill="none" stroke="#F5F3EC" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="title">Inicio de sesión</div>
+</header>
+
+<main>
+
+  <div class="brand">
+    <svg class="brand-logo" viewBox="0 0 100 100" role="img" aria-label="Logo del SISR">
+      <circle cx="50" cy="50" r="50" fill="#B9852F"/>
+      <circle cx="50" cy="50" r="43.5" fill="#0C3432"/>
+      <rect x="31" y="57" width="8" height="12" rx="1" fill="#D9A94F"/>
+      <rect x="44" y="48" width="8" height="21" rx="1" fill="#D9A94F"/>
+      <rect x="57" y="37.5" width="8" height="31.5" rx="1" fill="#D9A94F"/>
+      <polyline points="26.5,31.6 39.2,44.4 75.4,14.1" fill="none" stroke="#F5F3EC" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="brand-name">
+      <span class="sisr">SISR</span>
+      <span class="version">Versión 01</span>
+    </div>
+    <p class="brand-sub">Sistema de seguimiento y cumplimiento del plan de desarrollo y rendición de cuentas</p>
+  </div>
+
+  <div class="lead">
+    <h1>Bienvenido de nuevo</h1>
+    <p>Ingresa con tu correo institucional y contraseña para acceder al tablero de seguimiento del Plan de Desarrollo.</p>
+  </div>
+
+  <section class="card" aria-labelledby="titulo-form">
+    <div class="head">
+      <h2 id="titulo-form">Acceso al panel</h2>
+      <span class="role-pill">Administradores y gestores</span>
+    </div>
+    <div class="section-label">Credenciales</div>
+
+    <form id="formLogin" novalidate>
+      <div class="field">
+        <label for="email">Correo institucional</label>
+        <input type="email" id="email" autocomplete="username" placeholder="nombre@usiacuri.gov.co" required>
+      </div>
+
+      <div class="field">
+        <div class="label-row">
+          <label for="password">Contraseña</label>
+          <button type="button" class="link" id="btnOlvido">¿Olvidaste tu contraseña?</button>
+        </div>
+        <input type="password" id="password" autocomplete="current-password" placeholder="Mínimo 8 caracteres" required>
+      </div>
+
+      <label class="check" for="recordar">
+        <input type="checkbox" id="recordar">
+        <span>Mantener sesión iniciada en este equipo</span>
+      </label>
+
+      <div class="error" id="error" role="alert"></div>
+      <button class="btn" id="btnEntrar" type="submit">Iniciar sesión</button>
+    </form>
+
+    <p class="help">¿No tienes acceso? <button type="button" class="link strong" id="btnAcceso">Solicítalo al equipo de Sistemas</button></p>
+    <div class="info" id="info" role="status"></div>
+  </section>
+
+  <p class="foot">SISR · Versión 01</p>
+
+</main>
+
+<script>
+  const form = document.getElementById('formLogin');
+  const inpEmail = document.getElementById('email');
+  const inpPassword = document.getElementById('password');
+  const chkRecordar = document.getElementById('recordar');
+  const errorEl = document.getElementById('error');
+  const infoEl = document.getElementById('info');
+  const btnEntrar = document.getElementById('btnEntrar');
+  const btnOlvido = document.getElementById('btnOlvido');
+  const btnAcceso = document.getElementById('btnAcceso');
+
+  // Administradores y gestores entran al mismo panel (el archivo se llama «panel-administrativo (1).html»); allí se carga su rol
+  const PANEL_INICIO = '/panel-administrativo%20(1).html';
+  const GESTOR_INICIO = PANEL_INICIO;
+
+  // Solo se permite volver a una página .html del mismo sistema
+  function destino(){
+    const v = new URLSearchParams(location.search).get('volver') || '';
+    return /^\/[A-Za-z0-9_.-]+\.html$/.test(v) ? v : PANEL_INICIO;
+  }
+
+  function mostrarError(msg){
+    errorEl.textContent = msg;
+    errorEl.style.display = msg ? 'block' : 'none';
+  }
+
+  // Un solo mensaje de ayuda a la vez; pulsar el mismo enlace de nuevo lo oculta
+  let ayudaActual = '';
+  function alternarAyuda(clave, texto){
+    ayudaActual = ayudaActual === clave ? '' : clave;
+    infoEl.textContent = ayudaActual ? texto : '';
+    infoEl.style.display = ayudaActual ? 'block' : 'none';
+  }
+
+  btnOlvido.addEventListener('click', ()=> alternarAyuda('olvido',
+    'Por ahora la contraseña la restablece quien administra tu usuario: un superadministrador (administradores) o tu administrador (gestores). Comunícate con el equipo de Sistemas de la Alcaldía.'));
+  btnAcceso.addEventListener('click', ()=> alternarAyuda('acceso',
+    'Las cuentas de administrador las registra el equipo de Sistemas y las de gestor, tu administrador. Pide que creen tu cuenta con tu correo institucional.'));
+
+  form.addEventListener('submit', async e=>{
+    e.preventDefault();
+    mostrarError('');
+    const email = inpEmail.value.trim();
+    const password = inpPassword.value;
+    if(!email){ inpEmail.focus(); mostrarError('Escribe tu correo institucional.'); return; }
+    if(!password){ inpPassword.focus(); mostrarError('Escribe tu contraseña.'); return; }
+
+    btnEntrar.disabled = true;
+    try{
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({email, password, recordar: chkRecordar.checked})
+      });
+      if(r.ok){ const d = await r.json().catch(()=>({})); location.href = d.tipo === 'gestor' ? GESTOR_INICIO : destino(); return; }
+      const err = await r.json().catch(()=>({}));
+      mostrarError(err.error || 'No se pudo iniciar sesión (' + r.status + ').');
+      inpPassword.value = '';
+      inpPassword.focus();
+    }catch(e){
+      mostrarError('No se pudo conectar con el servidor. Abre esta página desde http://localhost:3000/iniciar-sesion.html y comprueba que "node server.js" esté en ejecución.');
+    }
+    btnEntrar.disabled = false;
+  });
+
+  // Si ya hay una sesión abierta, se pasa directo a la página de destino
+  fetch('/api/sesion')
+    .then(r=>{ if(r.ok) location.href = destino(); else return fetch('/api/gestor/sesion').then(g=>{ if(g.ok) location.href = GESTOR_INICIO; }); })
+    .catch(()=>{});
+</script>
+
+</body>
+</html>

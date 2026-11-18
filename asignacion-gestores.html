@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de gestores · Panel de control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#0F3D3B; --pine-deep:#0A2B29; --forest:#1F6F54; --forest-soft:#E7EFE9;
+    --paper:#F5F3EC; --paper-raised:#FFFFFF; --ink:#26241F; --ink-soft:#5B5A54; --ink-faint:#8B887C;
+    --line:#DFDACB; --ochre:#B9852F; --ochre-deep:#8F6620; --ochre-soft:#F5E9D4;
+    --done:#3E7C5A; --warn:#B5502E; --warn-soft:#F6E4DA;
+    --radius-s:6px; --radius-m:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper); color:var(--ink); font-family:'Public Sans', system-ui, sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Source Serif 4', Georgia, serif; font-weight:600; color:var(--pine-deep); margin:0;}
+  .mono{font-family:'IBM Plex Mono', ui-monospace, monospace;}
+  .skip{position:absolute;left:-9999px;}
+  .skip:focus{left:12px;top:12px;background:#fff;padding:8px 14px;border-radius:var(--radius-s);z-index:999;}
+
+  .topbar{background:linear-gradient(180deg,var(--pine) 0%, var(--pine-deep) 100%); color:#EFEEE6; padding:22px clamp(20px,4vw,56px); display:flex; align-items:center; gap:16px;}
+  .topbar-logo{width:40px; height:40px; flex-shrink:0; display:block;}
+
+  /* menú de usuario (rol según el acceso) */
+  .user{position:relative; margin-left:auto; flex-shrink:0;}
+  .user-btn{display:inline-flex; align-items:center; gap:10px; padding:5px 12px 5px 5px; border:1px solid var(--ochre); border-radius:999px; background:var(--paper-raised); color:var(--pine-deep); font:500 13.5px 'Public Sans',sans-serif; cursor:pointer; transition:background .15s ease;}
+  .user-btn:hover,.user-btn[aria-expanded="true"]{background:var(--paper);}
+  .user-btn:focus-visible,.user-menu .item:focus-visible{outline:2px solid var(--ochre); outline-offset:2px;}
+  .user-btn .avatar{width:32px; height:32px; border-radius:50%; background:var(--pine-deep); color:#F5F3EC; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .u-ico{width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;}
+  .user-btn .chev{width:16px; height:16px; color:var(--ink-soft); transition:transform .2s ease;}
+  .user-btn[aria-expanded="true"] .chev{transform:rotate(180deg);}
+  .user-menu{position:absolute; right:0; top:calc(100% + 10px); width:272px; padding:6px; background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); box-shadow:0 18px 40px -18px rgba(10,43,41,.38); opacity:0; visibility:hidden; transform:translateY(-6px); transition:opacity .15s ease, transform .15s ease, visibility 0s .15s; z-index:40;}
+  .user-menu.open{opacity:1; visibility:visible; transform:none; transition:opacity .15s ease, transform .15s ease;}
+  .user-menu .info{padding:12px 12px 11px; margin-bottom:6px; border-bottom:1px solid var(--line);}
+  .user-menu .info strong{display:block; font-size:14px; color:var(--pine-deep);}
+  .user-menu .info span{display:block; margin-top:2px; font-size:12.5px; color:var(--ink-soft);}
+  .user-menu .item{display:flex; align-items:center; gap:11px; width:100%; padding:10px 12px; border:none; border-radius:7px; background:none; color:var(--pine-deep); font:500 14px 'Public Sans',sans-serif; text-align:left; text-decoration:none; cursor:pointer;}
+  .user-menu .item .u-ico{color:var(--ink-soft);}
+  .user-menu .item:hover{background:var(--paper);}
+  .user-menu .item.salir:hover{background:var(--warn-soft); color:var(--warn);} .user-menu .item.salir:hover .u-ico{color:var(--warn);}
+  @media (max-width:640px){ .user-btn{padding-right:9px;} .user-btn .rol{display:none;} .user-menu{width:min(272px, calc(100vw - 24px));} }
+  .topbar-text .title{font-family:'Source Serif 4',serif;font-size:19px;font-weight:600;color:#FAF9F2;}
+
+  main{max-width:1220px; margin:0 auto; padding:clamp(28px,4vw,52px) clamp(20px,4vw,56px) 80px;}
+
+  .lead{max-width:700px; margin-bottom:32px;}
+  .lead h1{font-size:clamp(26px,3.2vw,34px); line-height:1.15; letter-spacing:-.01em;}
+  .lead p{color:var(--ink-soft); margin-top:10px; font-size:16px; max-width:62ch;}
+
+  /* ---------- admin picker ---------- */
+  .picker-label{font-size:13px; font-weight:600; color:var(--pine-deep); margin-bottom:10px;}
+  .picker{display:flex; gap:12px; overflow-x:auto; padding-bottom:6px; margin-bottom:38px;}
+  .admin-chip{
+    flex:0 0 auto; display:flex; align-items:center; gap:10px;
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:999px;
+    padding:8px 16px 8px 8px; cursor:pointer; transition:border-color .15s ease, background .15s ease;
+  }
+  .admin-chip:hover{border-color:var(--forest);}
+  .admin-chip.active{border-color:var(--pine-deep); background:var(--forest-soft);}
+  .admin-chip .avatar{width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Source Serif 4',serif; font-weight:600; font-size:12px; color:#fff; flex-shrink:0;}
+  .admin-chip .name{font-size:13.5px; font-weight:600; color:var(--pine-deep); white-space:nowrap;}
+  .admin-chip .cargo{font-size:11.5px; color:var(--ink-faint); white-space:nowrap;}
+  .admin-chip .count{
+    font-size:11px; font-weight:700; color:var(--ochre-deep); background:var(--ochre-soft);
+    border-radius:999px; padding:1px 7px; margin-left:2px;
+  }
+
+  .context-bar{
+    display:flex; align-items:center; gap:14px; margin-bottom:32px;
+    background:var(--paper-raised); border:1px solid var(--line); border-left:3px solid var(--forest);
+    border-radius:var(--radius-m); padding:16px 22px;
+  }
+  .context-bar .avatar{width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Source Serif 4',serif; font-weight:600; font-size:15px; color:#fff; flex-shrink:0;}
+  .context-bar .info .k{font-size:11.5px; color:var(--ink-faint);}
+  .context-bar .info .v{font-size:15px; font-weight:600; color:var(--pine-deep);}
+  .context-bar .sep{width:1px; height:30px; background:var(--line); margin:0 4px;}
+
+  /* ---------- form ---------- */
+  .card{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m);}
+  .form-card{border-left:3px solid var(--ochre); padding:28px clamp(22px,3vw,36px) 30px; margin-bottom:46px;}
+  .form-card .head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:22px;}
+  .form-card h2{font-size:20px;}
+  .mode-tag{font-size:12.5px; font-weight:600; padding:4px 11px; border-radius:999px; background:var(--forest-soft); color:var(--forest);}
+  .mode-tag.editing{background:var(--ochre-soft); color:var(--ochre-deep);}
+
+  .section{margin-bottom:26px;}
+  .section:last-of-type{margin-bottom:0;}
+  .section-title{font-size:12px; font-weight:600; color:var(--ink-faint); margin-bottom:12px; padding-bottom:8px; border-bottom:1px dashed var(--line);}
+  .grid-3{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:18px 24px;}
+  .grid-2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px 24px;}
+
+  .field label{display:block; font-size:13px; font-weight:600; color:var(--pine-deep); margin-bottom:6px;}
+  .field .hint{font-weight:400; color:var(--ink-faint); font-size:12px;}
+  .field input, .field select{
+    width:100%; font-family:inherit; font-size:14.5px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:var(--radius-s); background:#FCFBF7; color:var(--ink);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .field input::placeholder{color:#A6A296;}
+  .field input:focus, .field select:focus{outline:none; border-color:var(--forest); background:#fff; box-shadow:0 0 0 3px var(--forest-soft);}
+  .field input:disabled{color:var(--ink-faint); background:#F2F0E8; cursor:not-allowed;}
+  /* Campo de contraseña: botón para mostrar/ocultar y generador */
+  .pw-wrap{position:relative;}
+  .pw-wrap input{padding-right:84px;}
+  .pw-btn{position:absolute; right:6px; top:50%; transform:translateY(-50%); appearance:none; border:1px solid var(--line); background:#fff; color:var(--pine-deep); font-family:inherit; font-size:12px; font-weight:600; padding:5px 10px; border-radius:6px; cursor:pointer;}
+  .pw-btn:hover{border-color:var(--forest); color:var(--forest);}
+  .pw-btn:focus-visible{outline:2px solid var(--ochre); outline-offset:2px;}
+  .pw-gen{appearance:none; border:none; background:none; padding:0; margin-top:6px; font-family:inherit; font-size:12.5px; font-weight:600; color:var(--forest); cursor:pointer;}
+  .pw-gen:hover{text-decoration:underline;}
+  .pw-gen:focus-visible{outline:2px solid var(--forest); outline-offset:2px; border-radius:3px;}
+
+  .actions{display:flex; flex-wrap:wrap; gap:12px; margin-top:28px; padding-top:22px; border-top:1px solid var(--line);}
+  .btn{appearance:none; font-family:inherit; font-weight:600; font-size:14px; padding:10px 20px; border-radius:999px; cursor:pointer; transition:background .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease, transform .1s ease; display:inline-flex; align-items:center; gap:7px;}
+  .btn:active{transform:scale(.97);}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+  .btn-primary{border:1px solid var(--ochre); background:var(--ochre); color:#fff;}
+  .btn-primary:hover:not(:disabled){background:var(--ochre-deep); border-color:var(--ochre-deep);}
+  .btn-secondary{border:1px solid var(--forest); background:var(--forest-soft); color:var(--forest);}
+  .btn-secondary:hover:not(:disabled){background:var(--forest); color:#fff;}
+  .btn-danger{border:1px solid var(--warn); background:#fff; color:var(--warn);}
+  .btn-danger:hover:not(:disabled){background:var(--warn); color:#fff;}
+  .btn-ghost{border:1px solid var(--line); background:transparent; color:var(--ink-soft); margin-left:auto;}
+  .btn-ghost:hover:not(:disabled){border-color:var(--ink-soft); color:var(--ink);}
+
+  /* ---------- table ---------- */
+  .table-head{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:16px;}
+  .table-head h2{font-size:20px;}
+  .table-head .sub{color:var(--ink-soft); font-size:13.5px; margin-top:4px;}
+  .search{position:relative; width:230px; max-width:100%;}
+  .search input{width:100%; padding:9px 12px 9px 34px; border:1px solid var(--line); border-radius:999px; background:#fff; font-family:inherit; font-size:14px; color:var(--ink);}
+  .search input:focus{outline:none; border-color:var(--forest); box-shadow:0 0 0 3px var(--forest-soft);}
+  .search svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.45;}
+
+  .table-wrap{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); overflow:hidden;}
+  .thead{display:grid; grid-template-columns: 1.9fr 1.5fr 1.2fr .95fr 1.05fr .55fr; gap:16px; padding:13px 20px; border-bottom:1px solid var(--line); background:#FBFAF5;}
+  .thead span{font-size:11px; font-weight:600; color:var(--ink-soft);}
+
+  .row{display:grid; grid-template-columns: 1.9fr 1.5fr 1.2fr .95fr 1.05fr .55fr; gap:16px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); cursor:pointer; transition:background .15s ease;}
+  .row:last-child{border-bottom:none;}
+  .row:hover{background:#FBFAF5;}
+  .row.selected{background:var(--forest-soft);}
+
+  .person{display:flex; align-items:center; gap:11px;}
+  .avatar-sm{width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'Source Serif 4',serif; font-weight:600; font-size:13px; color:#fff;}
+  .person .name{font-weight:600; color:var(--pine-deep); font-size:14px;}
+  .person .fk{font-size:11px; color:var(--ink-faint);}
+  .cargo{font-size:13.5px; color:var(--ink);}
+  .contact a{font-size:12.5px; color:var(--forest); text-decoration:none;}
+  .contact a:hover{text-decoration:underline;}
+  .contact .tel{display:block; font-size:12px; color:var(--ink-soft); margin-top:2px;}
+
+  .role-badge{display:inline-block; font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:999px; white-space:nowrap;}
+  .role-super{background:var(--ochre-soft); color:var(--ochre-deep);}
+  .role-admin{background:var(--forest-soft); color:var(--forest);}
+  .role-gestor{background:#E3E9EF; color:#3A5470;}
+
+  .status{display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600;}
+  .dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .status.activo{color:var(--done);} .status.activo .dot{background:var(--done);}
+  .status.inactivo{color:var(--ink-faint);} .status.inactivo .dot{background:var(--ink-faint);}
+  .status.bloqueado{color:var(--warn);} .status.bloqueado .dot{background:var(--warn);}
+
+  .row-actions{display:flex; gap:6px; justify-content:flex-end;}
+  .icon-btn{width:30px; height:30px; border-radius:7px; border:1px solid var(--line); background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-soft); transition:border-color .15s ease, color .15s ease, background .15s ease;}
+  .icon-btn:hover{border-color:var(--forest); color:var(--forest); background:var(--forest-soft);}
+  .icon-btn.del:hover{border-color:var(--warn); color:var(--warn); background:var(--warn-soft);}
+
+  .empty-note{font-size:14px; color:var(--ink-soft); padding:24px 20px; display:none;}
+
+  .toast{position:fixed; left:50%; bottom:28px; transform:translate(-50%,12px); background:var(--pine-deep); color:#FAF9F2; padding:12px 20px; border-radius:999px; font-size:14px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; box-shadow:0 8px 24px rgba(10,43,41,.25);}
+  .toast.show{opacity:1; transform:translate(-50%,0);}
+
+  @media (max-width:900px){
+    .grid-3{grid-template-columns:1fr;}
+    .grid-2{grid-template-columns:1fr;}
+    .thead{display:none;}
+    .row{grid-template-columns:1fr; gap:10px; border:1px solid var(--line); border-radius:var(--radius-m); margin:0 0 12px; padding:16px;}
+    .table-wrap{background:transparent; border:none;}
+    .row .field-label{display:block; font-size:10.5px; font-weight:600; color:var(--ink-soft); margin-bottom:3px;}
+    .row-actions{justify-content:flex-start; padding-top:8px; border-top:1px dashed var(--line);}
+    .context-bar{flex-wrap:wrap;}
+  }
+
+  main{opacity:0; animation:rise .5s ease forwards;}
+  @keyframes rise{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){ main{animation:none; opacity:1;} *{transition:none !important;} }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<header class="topbar">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="u-usuario" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="u-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="u-inicio" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="u-salir" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol></defs></svg>
+  <svg class="topbar-logo" viewBox="0 0 100 100" role="img" aria-label="Logo del SISR">
+    <circle cx="50" cy="50" r="50" fill="#B9852F"/>
+    <circle cx="50" cy="50" r="43.5" fill="#0C3432"/>
+    <rect x="31" y="57" width="8" height="12" rx="1" fill="#D9A94F"/>
+    <rect x="44" y="48" width="8" height="21" rx="1" fill="#D9A94F"/>
+    <rect x="57" y="37.5" width="8" height="31.5" rx="1" fill="#D9A94F"/>
+    <polyline points="26.5,31.6 39.2,44.4 75.4,14.1" fill="none" stroke="#F5F3EC" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="topbar-text">
+    <div class="title">Gestión de gestores</div>
+  </div>
+  <div class="user" id="user">
+    <button class="user-btn" id="btnUsuario" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu">
+      <span class="avatar"><svg class="u-ico" aria-hidden="true"><use href="#u-usuario"/></svg></span>
+      <span class="rol" id="rolTxt">Rol: …</span>
+      <svg class="u-ico chev" aria-hidden="true"><use href="#u-abajo"/></svg>
+    </button>
+    <div class="user-menu" id="userMenu" role="menu" aria-label="Menú de usuario">
+      <div class="info"><strong id="rolMenu">Rol: …</strong><span id="nombreMenu">SISR</span></div>
+      <a class="item" role="menuitem" href="panel-administrativo%20(1).html"><svg class="u-ico" aria-hidden="true"><use href="#u-inicio"/></svg>Panel principal</a>
+      <button class="item salir" id="btnSalir" role="menuitem" type="button"><svg class="u-ico" aria-hidden="true"><use href="#u-salir"/></svg>Cerrar sesión</button>
+    </div>
+  </div>
+</header>
+
+<main id="contenido">
+
+  <div class="lead">
+    <h1>Asigna gestores a cada administrador</h1>
+    <p>Elige un administrador ya registrado y añádele los gestores encargados de responder por el cumplimiento de sus metas.</p>
+  </div>
+
+  <div class="picker-label">Administrador responsable</div>
+  <div class="picker" id="picker"></div>
+
+  <div class="context-bar" id="contextBar"></div>
+
+  <section class="card form-card" aria-labelledby="form-title">
+    <div class="head">
+      <h2 id="form-title">Datos del gestor</h2>
+      <span class="mode-tag" id="modeTag">Registrando nuevo gestor</span>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Identificación · asignación de gestores</div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="f-admin">id (FK) · administrador</label>
+          <select id="f-admin"></select>
+        </div>
+        <div class="field">
+          <label for="f-idg">id_Gestor <span class="hint">(se asigna automáticamente)</span></label>
+          <input type="text" id="f-idg" disabled placeholder="—">
+        </div>
+        <div class="field">
+          <label for="f-nombre">Nombre(s) del usuario</label>
+          <input type="text" id="f-nombre" placeholder="Ej. Camila Rueda">
+        </div>
+      </div>
+      <div class="grid-3" style="margin-top:18px;">
+        <div class="field" style="grid-column:1 / -1;">
+          <label for="f-cargo">Cargo / sector</label>
+          <input type="text" id="f-cargo" placeholder="Ej. Ambiente y desarrollo sostenible">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Seguridad</div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="f-email">Email</label>
+          <input type="email" id="f-email" placeholder="nombre@correo.com">
+        </div>
+        <div class="field">
+          <label for="f-telefono">Teléfono</label>
+          <input type="tel" id="f-telefono" placeholder="300 000 0000">
+        </div>
+        <div class="field">
+          <label for="f-password">Contraseña</label>
+          <div class="pw-wrap">
+            <input type="password" id="f-password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+            <button type="button" class="pw-btn" id="btnVerPass" aria-pressed="false" aria-label="Mostrar contraseña" title="Mostrar contraseña">Mostrar</button>
+          </div>
+          <button type="button" class="pw-gen" id="btnGenPass">Generar contraseña segura</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Roles y permisos</div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="f-rol">Rol</label>
+          <select id="f-rol">
+            <option value="Gestor">Gestor</option>
+            <option value="Gestor líder">Gestor líder</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-estado">Estado</label>
+          <select id="f-estado">
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+            <option value="Bloqueado">Bloqueado</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Auditoría y control <span class="hint">— generado por el sistema, no editable</span></div>
+      <div class="grid-3">
+        <div class="field">
+          <label for="f-acceso">Último acceso</label>
+          <input type="text" id="f-acceso" disabled placeholder="—">
+        </div>
+        <div class="field">
+          <label for="f-ip">IP del último acceso</label>
+          <input type="text" id="f-ip" disabled placeholder="—">
+        </div>
+        <div class="field">
+          <label for="f-fallidos">Intentos fallidos</label>
+          <input type="text" id="f-fallidos" disabled placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btnAdd">Añadir</button>
+      <button class="btn btn-secondary" id="btnUpdate" disabled>Actualizar</button>
+      <button class="btn btn-danger" id="btnDelete" disabled>Eliminar</button>
+      <button class="btn btn-ghost" id="btnClear">Limpiar formulario</button>
+    </div>
+  </section>
+
+  <div class="table-head">
+    <div>
+      <h2>Gestores asignados</h2>
+      <div class="sub" id="countSub"></div>
+    </div>
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#26241F" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="buscador" placeholder="Buscar por nombre o cargo">
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="thead">
+      <span>Gestor</span>
+      <span>Contacto</span>
+      <span>Rol</span>
+      <span>Estado</span>
+      <span>Cargo / sector</span>
+      <span></span>
+    </div>
+    <div id="rows"></div>
+    <p class="empty-note" id="emptyNote">Este administrador aún no tiene gestores asignados.</p>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API_ADMINS = '/api/administradores';
+  const API_GESTORES = '/api/gestores';
+
+  const gradients = ['linear-gradient(135deg,#1F6F54,#0F3D3B)','linear-gradient(135deg,#B9852F,#8F6620)','linear-gradient(135deg,#8A8779,#5B5A54)','linear-gradient(135deg,#3A6EA5,#0A2B29)','linear-gradient(135deg,#B5502E,#8F6620)'];
+  const initials = n => n.split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function formatAcceso(v){
+    if(!v) return '—';
+    const iso = v.includes('T') ? v : v.replace(' ', 'T') + 'Z';   // SQLite guarda en UTC
+    const d = new Date(iso);
+    if(isNaN(d)) return v;
+    return d.toLocaleString('es-CO', {day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit'});
+  }
+
+  let admins = [];     // vienen de la tabla administradores
+  let gestores = [];   // vienen de la tabla gestores
+  let selectedAdmin = null;
+  let selectedGestor = null;
+
+  const pickerEl = document.getElementById('picker');
+  const contextBar = document.getElementById('contextBar');
+  const rowsEl = document.getElementById('rows');
+  const emptyNote = document.getElementById('emptyNote');
+  const countSub = document.getElementById('countSub');
+  const buscador = document.getElementById('buscador');
+  const modeTag = document.getElementById('modeTag');
+  const btnAdd = document.getElementById('btnAdd');
+  const btnUpdate = document.getElementById('btnUpdate');
+  const btnDelete = document.getElementById('btnDelete');
+  const btnClear = document.getElementById('btnClear');
+  const toast = document.getElementById('toast');
+  const adminSelect = document.getElementById('f-admin');
+  const f = id => document.getElementById('f-'+id);
+
+  /* ---------- contraseña: mostrar/ocultar y generar ---------- */
+  function ocultarPassword(){
+    const inp = f('password'), btn = document.getElementById('btnVerPass');
+    inp.type = 'password';
+    btn.textContent = 'Mostrar';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.setAttribute('aria-label', 'Mostrar contraseña');
+    btn.title = 'Mostrar contraseña';
+  }
+  document.getElementById('btnVerPass').addEventListener('click', () => {
+    const inp = f('password'), btn = document.getElementById('btnVerPass');
+    const mostrar = inp.type === 'password';
+    inp.type = mostrar ? 'text' : 'password';
+    btn.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+    btn.setAttribute('aria-pressed', String(mostrar));
+    btn.setAttribute('aria-label', mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    btn.title = mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña';
+  });
+  // Genera 12 caracteres con crypto.getRandomValues (sin símbolos ambiguos como 0/O o l/1)
+  function generarPassword(){
+    const grupos = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnpqrstuvwxyz', '23456789', '#$%&*+?!'];
+    const todo = grupos.join('');
+    const azar = n => { const b = new Uint32Array(1); crypto.getRandomValues(b); return b[0] % n; };
+    const chars = grupos.map(g => g[azar(g.length)]);          // al menos uno de cada tipo
+    while(chars.length < 12) chars.push(todo[azar(todo.length)]);
+    for(let i = chars.length - 1; i > 0; i--){ const j = azar(i + 1); [chars[i], chars[j]] = [chars[j], chars[i]]; }
+    return chars.join('');
+  }
+  document.getElementById('btnGenPass').addEventListener('click', () => {
+    f('password').value = generarPassword();
+    if(f('password').type === 'password') document.getElementById('btnVerPass').click();   // se muestra para poder copiarla
+    showToast('Contraseña generada: cópiala y entrégala antes de guardar');
+  });
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toast.classList.remove('show'), 2200);
+  }
+
+  /* ---------- comunicación con la base de datos ---------- */
+
+  async function cargar(){
+    try{
+      const [ra, rg] = await Promise.all([fetch(API_ADMINS), fetch(API_GESTORES)]);
+      if(!ra.ok || !rg.ok) throw new Error();
+      admins = await ra.json();
+      gestores = await rg.json();
+    }catch(e){
+      showToast('No se pudo conectar con el servidor');
+    }
+    if(!admins.some(a=>a.id===selectedAdmin)) selectedAdmin = admins.length ? admins[0].id : null;
+  }
+
+  async function enviar(url, method, body){
+    try{
+      const r = await fetch(url, {
+        method,
+        headers: {'Content-Type':'application/json'},
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if(r.ok) return true;
+      const err = await r.json().catch(()=>({}));
+      showToast(err.error || 'Ocurrió un error');
+    }catch(e){
+      showToast('No se pudo conectar con el servidor');
+    }
+    return false;
+  }
+
+  /* ---------- dibujo de la página ---------- */
+
+  function gestorCount(adminId){ return gestores.filter(g=>g.adminId===adminId).length; }
+  function statusClass(estado){ return estado.toLowerCase(); }
+  function roleClass(rol){ return rol === 'Gestor líder' ? 'role-super' : 'role-gestor'; }
+
+  function renderPicker(){
+    pickerEl.innerHTML = '';
+    if(admins.length === 0){
+      pickerEl.innerHTML = '<p class="empty-note" style="display:block; padding:0 0 8px;">Aún no hay administradores registrados. Créalos primero en <a href="gestion-administradores.html">Gestión de administradores</a>.</p>';
+      adminSelect.innerHTML = '';
+      return;
+    }
+    admins.forEach((a, i)=>{
+      const chip = document.createElement('div');
+      chip.className = 'admin-chip' + (a.id === selectedAdmin ? ' active' : '');
+      chip.innerHTML = `
+        <div class="avatar" style="background:${gradients[i % gradients.length]};">${esc(initials(a.nombre))}</div>
+        <div>
+          <div class="name">${esc(a.nombre)} <span class="count">${gestorCount(a.id)}</span></div>
+          <div class="cargo">${esc(a.cargo || '—')}</div>
+        </div>`;
+      chip.addEventListener('click', ()=>{ selectedAdmin = a.id; clearForm(); });
+      pickerEl.appendChild(chip);
+    });
+
+    adminSelect.innerHTML = admins.map(a=>`<option value="${a.id}">${a.id} · ${esc(a.nombre)}</option>`).join('');
+  }
+
+  function renderContext(){
+    const idx = admins.findIndex(a=>a.id===selectedAdmin);
+    if(idx < 0){ contextBar.innerHTML = ''; return; }
+    const a = admins[idx];
+    contextBar.innerHTML = `
+      <div class="avatar" style="background:${gradients[idx % gradients.length]};">${esc(initials(a.nombre))}</div>
+      <div class="info"><div class="k">Administrador seleccionado</div><div class="v">${esc(a.nombre)}</div></div>
+      <div class="sep"></div>
+      <div class="info"><div class="k">Cargo</div><div class="v">${esc(a.cargo || '—')}</div></div>
+      <div class="sep"></div>
+      <div class="info"><div class="k">Gestores asignados</div><div class="v">${gestorCount(a.id)}</div></div>
+    `;
+  }
+
+  function renderRows(){
+    const q = buscador.value.trim().toLowerCase();
+    rowsEl.innerHTML = '';
+    let visible = 0;
+    gestores.filter(g=>g.adminId===selectedAdmin).forEach((g, idx)=>{
+      const haystack = (g.nombre+' '+(g.cargo||'')).toLowerCase();
+      if(q && !haystack.includes(q)) return;
+      visible++;
+      const row = document.createElement('div');
+      row.className = 'row' + (g.idg === selectedGestor ? ' selected' : '');
+      row.innerHTML = `
+        <div class="person">
+          <div class="avatar-sm" style="background:${gradients[(idx+2) % gradients.length]};">${esc(initials(g.nombre))}</div>
+          <div><div class="name">${esc(g.nombre)}</div><div class="fk">id_Gestor ${esc(g.idg)} · FK admin ${esc(g.adminId)}</div></div>
+        </div>
+        <div>
+          <div class="field-label">Contacto</div>
+          <div class="contact"><a href="#" onclick="return false;">${esc(g.email)}</a><span class="tel">${esc(g.telefono || '—')}</span></div>
+        </div>
+        <div>
+          <div class="field-label">Rol</div>
+          <span class="role-badge ${roleClass(g.rol)}">${esc(g.rol)}</span>
+        </div>
+        <div>
+          <div class="field-label">Estado</div>
+          <div class="status ${statusClass(g.estado)}"><span class="dot"></span>${esc(g.estado)}</div>
+        </div>
+        <div>
+          <div class="field-label">Cargo / sector</div>
+          <div class="cargo">${esc(g.cargo || '—')}</div>
+        </div>
+        <div class="row-actions">
+          <button class="icon-btn edit" title="Editar" aria-label="Editar ${esc(g.nombre)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <button class="icon-btn del" title="Eliminar" aria-label="Eliminar ${esc(g.nombre)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      `;
+      row.querySelector('.edit').addEventListener('click', e=>{ e.stopPropagation(); selectGestor(g.idg); });
+      row.querySelector('.del').addEventListener('click', e=>{ e.stopPropagation(); selectGestor(g.idg); deleteSelected(); });
+      row.addEventListener('click', ()=> selectGestor(g.idg));
+      rowsEl.appendChild(row);
+    });
+    emptyNote.textContent = q ? 'No hay gestores que coincidan con tu búsqueda.' : 'Este administrador aún no tiene gestores asignados.';
+    emptyNote.style.display = (visible === 0 && selectedAdmin !== null) ? 'block' : 'none';
+    const n = gestorCount(selectedAdmin);
+    countSub.textContent = selectedAdmin === null ? '' : n + ' gestor' + (n===1?'':'es') + ' para este administrador';
+  }
+
+  function renderAll(){ renderPicker(); renderContext(); renderRows(); }
+
+  function selectGestor(idg){
+    selectedGestor = idg;
+    const g = gestores.find(x=>x.idg===idg);
+    adminSelect.value = g.adminId;
+    f('idg').value = g.idg;
+    f('nombre').value = g.nombre;
+    f('cargo').value = g.cargo;
+    f('email').value = g.email;
+    f('telefono').value = g.telefono;
+    f('password').value = '';
+    f('password').placeholder = 'Dejar en blanco para no cambiarla';
+    ocultarPassword();
+    f('rol').value = g.rol;
+    f('estado').value = g.estado;
+    f('acceso').value = formatAcceso(g.acceso);
+    f('ip').value = g.ip || '—';
+    f('fallidos').value = g.fallidos;
+    modeTag.textContent = 'Editando a ' + g.nombre;
+    modeTag.classList.add('editing');
+    btnUpdate.disabled = false;
+    btnDelete.disabled = false;
+    renderRows();
+  }
+
+  function clearForm(){
+    selectedGestor = null;
+    ['nombre','cargo','email','telefono','password'].forEach(k=>f(k).value='');
+    f('idg').value = '';
+    f('acceso').value = '';
+    f('ip').value = '';
+    f('fallidos').value = '';
+    f('password').placeholder = 'Mínimo 8 caracteres';
+    ocultarPassword();
+    f('rol').value = 'Gestor';
+    f('estado').value = 'Activo';
+    modeTag.textContent = 'Registrando nuevo gestor';
+    modeTag.classList.remove('editing');
+    btnUpdate.disabled = true;
+    btnDelete.disabled = true;
+    btnAdd.disabled = admins.length === 0;
+    renderAll();
+    // renderPicker reconstruye la lista de administradores, por eso se selecciona después
+    if(selectedAdmin !== null) adminSelect.value = selectedAdmin;
+  }
+
+  /* ---------- acciones ---------- */
+
+  function datosFormulario(){
+    return {
+      adminId: Number(adminSelect.value),
+      nombre: f('nombre').value.trim(),
+      cargo: f('cargo').value.trim(),
+      email: f('email').value.trim(),
+      telefono: f('telefono').value.trim(),
+      password: f('password').value,
+      rol: f('rol').value,
+      estado: f('estado').value
+    };
+  }
+
+  function validar(d, requierePassword){
+    if(!d.adminId){ showToast('Selecciona un administrador'); return false; }
+    if(!d.nombre){ f('nombre').focus(); showToast('Escribe el nombre'); return false; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)){ f('email').focus(); showToast('Escribe un email válido'); return false; }
+    if((requierePassword || d.password) && d.password.length < 8){
+      f('password').focus(); showToast('La contraseña debe tener mínimo 8 caracteres'); return false;
+    }
+    return true;
+  }
+
+  async function addGestor(){
+    const d = datosFormulario();
+    if(!validar(d, true)) return;
+    if(await enviar(API_GESTORES, 'POST', d)){
+      selectedAdmin = d.adminId;
+      showToast('Gestor añadido');
+      await cargar();
+      clearForm();
+    }
+  }
+
+  async function updateSelected(){
+    if(selectedGestor === null) return;
+    const d = datosFormulario();
+    if(!validar(d, false)) return;
+    if(await enviar(API_GESTORES + '/' + selectedGestor, 'PUT', d)){
+      selectedAdmin = d.adminId;
+      showToast('Gestor actualizado');
+      await cargar();
+      clearForm();
+    }
+  }
+
+  async function deleteSelected(){
+    if(selectedGestor === null) return;
+    const g = gestores.find(x=>x.idg===selectedGestor);
+    if(!confirm('¿Eliminar a ' + g.nombre + '? Esta acción no se puede deshacer.')) return;
+    if(await enviar(API_GESTORES + '/' + selectedGestor, 'DELETE')){
+      showToast('Gestor eliminado');
+      await cargar();
+      clearForm();
+    }
+  }
+
+  btnAdd.addEventListener('click', addGestor);
+  btnUpdate.addEventListener('click', updateSelected);
+  btnDelete.addEventListener('click', deleteSelected);
+  btnClear.addEventListener('click', clearForm);
+  buscador.addEventListener('input', renderRows);
+
+  /* ---------- usuario de la sesión: el rol sale de su cuenta ---------- */
+  const btnUsuario = document.getElementById('btnUsuario');
+  const userMenu = document.getElementById('userMenu');
+  function cerrarMenuUsuario(devolverFoco){
+    if(!userMenu.classList.contains('open')) return;
+    userMenu.classList.remove('open');
+    btnUsuario.setAttribute('aria-expanded', 'false');
+    if(devolverFoco) btnUsuario.focus();
+  }
+  btnUsuario.addEventListener('click', e=>{
+    e.stopPropagation();
+    const abrir = !userMenu.classList.contains('open');
+    userMenu.classList.toggle('open', abrir);
+    btnUsuario.setAttribute('aria-expanded', String(abrir));
+  });
+  document.addEventListener('click', e=>{ if(!e.target.closest('#user')) cerrarMenuUsuario(false); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarMenuUsuario(true); });
+  document.getElementById('btnSalir').addEventListener('click', async ()=>{
+    try{ await fetch('/api/logout', {method:'POST'}); }catch(e){ /* sin servidor: igual se vuelve al inicio de sesión */ }
+    location.href = 'iniciar-sesion.html';
+  });
+
+  async function cargarSesion(){
+    try{
+      const r = await fetch('/api/sesion');
+      if(r.status === 401){ location.href = 'iniciar-sesion.html?volver=/asignacion-gestores.html'; return; }
+      if(!r.ok) return;
+      const a = await r.json();   // rol: Superadministrador o Administrador
+      document.getElementById('rolTxt').textContent = 'Rol: ' + a.rol;
+      document.getElementById('rolMenu').textContent = 'Rol: ' + a.rol;
+      // Debajo del rol, el nombre de la persona que inició sesión
+      if(a.nombre) document.getElementById('nombreMenu').textContent = String(a.nombre).trim().toLocaleUpperCase('es-CO');
+    }catch(e){ /* sin servidor: el rol se queda sin mostrar */ }
+  }
+  cargarSesion();
+
+  cargar().then(clearForm);
+</script>
+
+</body>
+</html>

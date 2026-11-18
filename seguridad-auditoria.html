@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguridad y auditoría · SISR Usiacurí</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --header-bg: #0c3432;
+    --page-bg: #f5f3ec;
+    --card-bg: #ffffff;
+    --accent: #b9852f;
+    --accent-deep: #8f6620;
+    --heading: #0a2b29;
+    --text-secondary: #696962;
+    --section-label: #9f9d93;
+    --input-bg: #fcfbf7;
+    --input-border: #dfdacb;
+    --placeholder: #c0bdb3;
+    --pill-bg: #dae7e0;
+    --pill-text: #4e8d77;
+    --divider: #e3ddc9;
+    --shadow: rgba(10, 43, 41, 0.08);
+    --warn-text: #a8672a;
+    --alert-bg: #fbefea;
+    --alert-bg-hover: #f7e4dd;
+    --bloq-bg: #f2ddd6;
+    --bloq-text: #a15b4a;
+    --inactive-bg: #ece9df;
+    --inactive-text: #8b887c;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--page-bg);
+    color: var(--heading);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- barra superior ---------- */
+  .topbar {
+    background: var(--header-bg);
+    color: #f5f3ec;
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+  }
+  /* Menú desplegable de usuario (arriba a la derecha) */
+  .user { position: relative; margin-left: auto; flex-shrink: 0; }
+
+  .user-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 12px 5px 5px;
+    border: 1px solid var(--input-border);
+    border-radius: 100px;
+    background: var(--card-bg);
+    color: var(--heading);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .user-btn:hover, .user-btn[aria-expanded="true"] { background: var(--input-bg); border-color: var(--accent); }
+  .user-btn .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--header-bg);
+    color: #f5f3ec;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .user-btn .avatar svg { width: 17px; height: 17px; }
+  .user-btn .rol { white-space: nowrap; }
+  .user-btn .chev { width: 16px; height: 16px; color: var(--text-secondary); transition: transform 0.2s ease; }
+  .user-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+  .user-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 272px;
+    padding: 6px;
+    background: var(--card-bg);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    box-shadow: 0 18px 40px -18px rgba(10, 43, 41, 0.38);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s 0.15s;
+    z-index: 40;
+  }
+  .user-menu.open { opacity: 1; visibility: visible; transform: none; transition: opacity 0.15s ease, transform 0.15s ease; }
+
+  .user-menu .info { padding: 12px 12px 11px; margin-bottom: 6px; border-bottom: 1px solid var(--divider); }
+  .user-menu .info strong { display: block; font-size: 14px; color: var(--heading); }
+  .user-menu .info span { display: block; margin-top: 2px; font-size: 12.5px; color: var(--text-secondary); }
+
+  .user-menu .item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 7px;
+    background: none;
+    color: var(--heading);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .user-menu .item svg { width: 17px; height: 17px; color: var(--text-secondary); }
+  .user-menu .item:hover, .user-menu .item:focus-visible { background: var(--input-bg); outline: none; }
+  .user-menu .item.salir:hover, .user-menu .item.salir:focus-visible { background: #f6e4da; color: #a15b4a; }
+  .user-menu .item.salir:hover svg, .user-menu .item.salir:focus-visible svg { color: #a15b4a; }
+  .topbar-logo { width: 38px; height: 38px; flex-shrink: 0; display: block; }
+  .u-ico { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .user-btn:focus-visible, .user-menu .item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 640px) { .user-btn { padding-right: 9px; } .user-btn .rol { display: none; } .user-menu { width: min(272px, calc(100vw - 24px)); } }
+
+  .topbar h1 { font-family: 'Lora', serif; font-weight: 700; font-size: 17px; margin: 0; }
+
+  main { display: flex; justify-content: center; padding: 44px 24px 70px; }
+  .wrap { width: 100%; max-width: 1120px; }
+
+  .aviso {
+    display: none;
+    margin: 0 0 22px;
+    padding: 12px 16px;
+    border: 1px solid #b5502e;
+    border-left-width: 4px;
+    border-radius: 8px;
+    background: #fbefea;
+    color: #b5502e;
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+
+  /* ---------- encabezado ---------- */
+  .heading-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
+  .heading h2 { font-family: 'Lora', serif; font-weight: 700; font-size: 30px; line-height: 1.28; margin: 0 0 10px; }
+  .heading p { font-size: 15px; line-height: 1.55; color: var(--text-secondary); margin: 0; max-width: 66ch; }
+
+  .btn {
+    padding: 11px 16px;
+    border-radius: 7px;
+    border: 1px solid var(--input-border);
+    background: var(--card-bg);
+    color: var(--heading);
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--header-bg); border-color: var(--header-bg); color: #f5f3ec; }
+  .btn.primary:hover { background: color-mix(in srgb, var(--header-bg) 85%, black); }
+  .btn.unlock { border-color: var(--accent); color: var(--accent-deep); }
+  .btn.unlock:hover { background: #f5e9d4; }
+
+  /* ---------- tarjetas de resumen ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card { background: var(--card-bg); border: 1px solid var(--divider); border-radius: 8px; padding: 16px 18px; }
+  .stat-card .value { font-family: 'Lora', serif; font-weight: 700; font-size: 22px; color: var(--heading); }
+  .stat-card.warn .value { color: var(--warn-text); }
+  .stat-card .label { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+
+  /* ---------- filtros ---------- */
+  .filters { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .filters select, .filters input[type="text"], .filters input[type="date"] {
+    padding: 10px 13px;
+    border-radius: 7px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--heading);
+    font-size: 13.3px;
+    font-family: inherit;
+    outline: none;
+    appearance: none;
+  }
+  .filters select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23696962' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 30px;
+    cursor: pointer;
+  }
+  .filters input[type="date"] { appearance: auto; min-width: 150px; }
+  .filters input[type="text"] { flex: 1; min-width: 220px; }
+  .filters select:focus, .filters input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+
+  .section-label { display: flex; align-items: center; gap: 10px; color: var(--section-label); font-size: 12.5px; margin: 24px 0 14px; }
+  .section-label .count { color: var(--pill-text); background: var(--pill-bg); font-weight: 600; padding: 2px 9px; border-radius: 100px; }
+  .section-label::after { content: ""; flex: 1; border-bottom: 1px dashed var(--divider); }
+
+  /* ---------- tabla ---------- */
+  .table-card {
+    background: var(--card-bg);
+    border: 1px solid var(--divider);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 10px 24px -16px var(--shadow);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left;
+    font-size: 10.8px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--section-label);
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--divider);
+    white-space: nowrap;
+  }
+  tbody td { padding: 12px 16px; font-size: 13px; color: var(--heading); border-bottom: 1px solid var(--divider); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--input-bg); }
+  tbody tr.alerta td { background: var(--alert-bg); }
+  tbody tr.alerta:hover td { background: var(--alert-bg-hover); }
+  td.nowrap { white-space: nowrap; }
+
+  .user-cell .nombre {
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+    color: var(--heading);
+    text-align: left;
+    cursor: pointer;
+  }
+  .user-cell .nombre:hover { text-decoration: underline; }
+  .user-cell .nombre:focus-visible, .btn:focus-visible, .modal-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .user-cell .sub { display: block; font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+
+  .rol-pill { display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--pill-text); background: var(--pill-bg); padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+  .rol-pill.super { background: var(--header-bg); color: #f5f3ec; }
+
+  .estado { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+  .estado .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .estado.activo { background: var(--pill-bg); color: var(--pill-text); }
+  .estado.inactivo { background: var(--inactive-bg); color: var(--inactive-text); }
+  .estado.bloqueado { background: var(--bloq-bg); color: var(--bloq-text); }
+
+  .ip { font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 12px; color: var(--text-secondary); }
+  .intentos { font-weight: 600; font-size: 13px; }
+  .intentos.alto { color: var(--warn-text); }
+
+  .acciones .btn { padding: 6px 11px; font-size: 11.5px; border-radius: 6px; }
+
+  .vacio { display: none; text-align: center; font-size: 14px; color: var(--text-secondary); padding: 34px 10px; }
+
+  /* ---------- acceso restringido ---------- */
+  .restringido { max-width: 520px; margin: 40px auto 0; text-align: center; background: var(--card-bg); border: 1px solid var(--divider); border-left: 4px solid var(--accent); border-radius: 8px; padding: 38px 30px 34px; box-shadow: 0 10px 24px -16px var(--shadow); }
+  .restringido .lock { width: 54px; height: 54px; margin: 0 auto 16px; border-radius: 50%; background: var(--header-bg); color: #f5f3ec; display: flex; align-items: center; justify-content: center; }
+  .restringido .lock svg { width: 26px; height: 26px; }
+  .restringido h2 { font-family: 'Lora', serif; font-size: 24px; margin: 0 0 10px; }
+  .restringido p { margin: 0 0 22px; font-size: 14.5px; line-height: 1.6; color: var(--text-secondary); }
+
+  /* ---------- detalle ---------- */
+  .modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(10, 43, 41, 0.5); }
+  .modal-card { width: min(580px, 100%); max-height: 92vh; overflow: auto; background: var(--card-bg); border-left: 4px solid var(--accent); border-radius: 8px; box-shadow: 0 28px 60px -24px rgba(0, 0, 0, 0.5); }
+  .modal-head { display: flex; align-items: flex-start; gap: 12px; padding: 22px 22px 12px; }
+  .modal-head h3 { font-family: 'Lora', serif; font-weight: 700; font-size: 20px; margin: 0; line-height: 1.3; }
+  .modal-head .sub { margin-top: 3px; font-size: 13px; color: var(--text-secondary); }
+  .modal-close { margin-left: auto; width: 34px; height: 34px; flex-shrink: 0; border: 1px solid var(--input-border); border-radius: 8px; background: var(--card-bg); color: var(--heading); font-size: 18px; line-height: 1; cursor: pointer; }
+  .modal-close:hover { border-color: var(--accent); }
+  .modal-alerta { margin: 4px 22px 6px; padding: 10px 13px; border-radius: 7px; background: var(--alert-bg); color: var(--bloq-text); font-size: 13px; line-height: 1.5; }
+  .detalle { display: grid; grid-template-columns: 160px 1fr; gap: 10px 16px; margin: 0; padding: 10px 22px 18px; }
+  .detalle dt { font-size: 12.5px; color: var(--text-secondary); }
+  .detalle dd { margin: 0; font-size: 14px; word-break: break-word; }
+  .hist { margin: 0 22px 16px; padding-top: 12px; border-top: 1px dashed var(--divider); }
+  .hist h4 { margin: 0 0 8px; font-size: 13px; color: var(--heading); }
+  .hist-vacio { font-size: 13px; color: var(--text-secondary); }
+  .hist-scroll { max-height: 200px; overflow: auto; }
+  .hist table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .hist th { text-align: left; font-weight: 600; color: var(--text-secondary); padding: 4px 8px 4px 0; }
+  .hist td { padding: 5px 8px 5px 0; border-top: 1px solid var(--divider); white-space: nowrap; }
+  .hist .res-ok { color: #1F6F54; font-weight: 600; }
+  .hist .res-mal { color: #B5502E; font-weight: 600; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px 20px; border-top: 1px dashed var(--divider); }
+
+  .foot-note { text-align: center; font-size: 12px; color: var(--section-label); margin-top: 30px; line-height: 1.6; }
+
+  @media (max-width: 800px) {
+    main { padding: 32px 16px 56px; }
+    .heading h2 { font-size: 24px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .table-card { overflow-x: auto; }
+    table { min-width: 860px; }
+    .topbar { padding: 14px 16px; flex-wrap: wrap; }
+    .detalle { grid-template-columns: 1fr; gap: 2px 0; }
+    .detalle dd { margin-bottom: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="u-usuario" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="u-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="u-inicio" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="u-salir" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol></defs></svg>
+  <svg class="topbar-logo" viewBox="0 0 100 100" role="img" aria-label="Logo del SISR">
+    <circle cx="50" cy="50" r="50" fill="#B9852F"/>
+    <circle cx="50" cy="50" r="43.5" fill="#0C3432"/>
+    <rect x="31" y="57" width="8" height="12" rx="1" fill="#D9A94F"/>
+    <rect x="44" y="48" width="8" height="21" rx="1" fill="#D9A94F"/>
+    <rect x="57" y="37.5" width="8" height="31.5" rx="1" fill="#D9A94F"/>
+    <polyline points="26.5,31.6 39.2,44.4 75.4,14.1" fill="none" stroke="#F5F3EC" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div>
+    <h1>Seguridad y auditoría</h1>
+  </div>
+  <div class="user" id="user">
+    <button class="user-btn" id="btnUsuario" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu">
+      <span class="avatar"><svg class="u-ico" aria-hidden="true"><use href="#u-usuario"/></svg></span>
+      <span class="rol" id="rolePill">Rol: …</span>
+      <svg class="u-ico chev" aria-hidden="true"><use href="#u-abajo"/></svg>
+    </button>
+    <div class="user-menu" id="userMenu" role="menu" aria-label="Menú de usuario">
+      <div class="info"><strong id="rolMenu">Rol: …</strong><span id="nombreMenu">SISR</span></div>
+      <a class="item" role="menuitem" href="panel-administrativo%20(1).html"><svg class="u-ico" aria-hidden="true"><use href="#u-inicio"/></svg>Panel principal</a>
+      <button class="item salir" id="btnSalir" role="menuitem" type="button"><svg class="u-ico" aria-hidden="true"><use href="#u-salir"/></svg>Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="wrap">
+    <div class="aviso" id="aviso" role="alert"></div>
+
+    <!-- Solo el superadministrador ve el contenido; cualquier otro rol ve este aviso -->
+    <section class="restringido" id="restringido" hidden>
+      <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <h2>Acceso restringido</h2>
+      <p>La bitácora de auditoría muestra datos de seguridad de todos los usuarios y es solo para el superadministrador del sistema.</p>
+      <a class="btn primary" href="panel-administrativo%20(1).html">Volver al panel</a>
+    </section>
+
+    <div id="contenido" hidden>
+      <div class="heading-row">
+        <div class="heading">
+          <h2>Bitácora de auditoría</h2>
+          <p>Consulta el acceso, la IP y los intentos fallidos de cada administrador y gestor del sistema, para detectar actividad inusual y controlar cuentas bloqueadas.</p>
+        </div>
+        <button type="button" class="btn" id="btnExportar">↓ Exportar bitácora</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card"><div class="value" id="statTotal">–</div><div class="label">Usuarios registrados</div></div>
+        <div class="stat-card"><div class="value" id="statActivas">–</div><div class="label">Cuentas activas</div></div>
+        <div class="stat-card warn"><div class="value" id="statBloqueadas">–</div><div class="label">Cuentas bloqueadas</div></div>
+        <div class="stat-card warn"><div class="value" id="statFallidos">–</div><div class="label">Con intentos fallidos ≥ 4</div></div>
+      </div>
+
+      <div class="filters">
+        <select id="fRol" aria-label="Filtrar por rol">
+          <option value="">Rol: Todos</option>
+          <option>Superadministrador</option>
+          <option>Administrador</option>
+          <option>Gestor líder</option>
+          <option>Gestor</option>
+        </select>
+        <select id="fEstado" aria-label="Filtrar por estado">
+          <option value="">Estado: Todos</option>
+          <option>Activo</option>
+          <option>Inactivo</option>
+          <option>Bloqueado</option>
+        </select>
+        <input type="date" id="fFecha" aria-label="Filtrar por fecha de último acceso" title="Fecha del último acceso">
+        <input type="text" id="buscador" placeholder="Buscar por nombre, email o IP" aria-label="Buscar por nombre, email o IP">
+      </div>
+
+      <div class="section-label">Registro de acceso <span class="count" id="countFiltrados">0</span></div>
+
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Último acceso</th>
+              <th>IP</th>
+              <th>Intentos fallidos</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="filas"></tbody>
+        </table>
+        <p class="vacio" id="vacio"></p>
+      </div>
+
+      <p class="foot-note">SISR · Sistema de Seguimiento y Cumplimiento del Plan de Desarrollo<br>y Rendición de Cuentas</p>
+    </div>
+  </div>
+</main>
+
+<!-- Detalle de un usuario -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalTitulo"></h3>
+        <div class="sub" id="modalSub"></div>
+      </div>
+      <button class="modal-close" id="modalCerrar" type="button" aria-label="Cerrar detalle">✕</button>
+    </div>
+    <div class="modal-alerta" id="modalAlerta" hidden></div>
+    <dl class="detalle" id="modalDetalle"></dl>
+    <div class="hist" id="modalHistorial"></div>
+    <div class="modal-foot" id="modalPie"></div>
+  </div>
+</div>
+
+<script>
+  const PAGINA = '/seguridad-auditoria.html';
+  const UMBRAL = 4;   // intentos fallidos a partir de los cuales una cuenta se marca como sospechosa
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const el = id => document.getElementById(id);
+
+  let usuarios = [];
+  let ocupado = false;
+  let focoPrevio = null;
+
+  /* ---------- avisos ---------- */
+
+  let toastEl = null;
+  function showToast(msg){
+    if(!toastEl){
+      toastEl = document.createElement('div');
+      toastEl.setAttribute('role', 'status');
+      toastEl.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#0a2b29;color:#f5f3ec;padding:12px 20px;border-radius:100px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(10,43,41,.25);z-index:200;transition:opacity .2s ease;max-width:90vw;text-align:center;';
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = msg;
+    toastEl.style.opacity = '1';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>{ toastEl.style.opacity = '0'; }, 2800);
+  }
+
+  function mostrarAviso(msg){
+    el('aviso').textContent = msg;
+    el('aviso').style.display = msg ? 'block' : 'none';
+  }
+
+  function describirFallo(ruta, fallo){
+    if(fallo === 'conexion')
+      return 'No se pudo conectar con el servidor. Abre esta página desde http://localhost:3000' + PAGINA + ' y comprueba que "node server.js" esté en ejecución.';
+    if(fallo === 404)
+      return 'El servidor no tiene la ruta ' + ruta + '. Reemplaza server.js por la versión más reciente y reinícialo (Ctrl + C y luego node server.js).';
+    if(fallo === 'formato')
+      return 'La ruta ' + ruta + ' no devolvió datos válidos. Comprueba que estés abriendo la página desde http://localhost:3000.';
+    return 'El servidor respondió con un error (' + fallo + ') en ' + ruta + '. Revisa la ventana donde se ejecuta node server.js.';
+  }
+
+  /* ---------- sesión y datos ---------- */
+
+  function irAlLogin(conRetorno = true){
+    location.href = '/iniciar-sesion.html' + (conRetorno ? '?volver=' + encodeURIComponent(PAGINA) : '');
+  }
+
+  async function pedir(url){
+    let r;
+    try{ r = await fetch(url); }
+    catch(e){ return {fallo:'conexion'}; }
+    if(!r.ok) return {fallo:r.status};
+    try{ return {datos: await r.json()}; }
+    catch(e){ return {fallo:'formato'}; }
+  }
+
+  function mostrarRestringido(){
+    el('contenido').hidden = true;
+    el('restringido').hidden = false;
+  }
+
+  async function cargar(){
+    const r = await pedir('/api/auditoria');
+    if(r.fallo === 401){ irAlLogin(); return false; }
+    if(r.fallo === 403){ mostrarRestringido(); return false; }
+    if(r.fallo){ mostrarAviso(describirFallo('/api/auditoria', r.fallo)); return false; }
+    usuarios = r.datos.sort((a, b) => (b.acceso || '').localeCompare(a.acceso || '') || a.nombre.localeCompare(b.nombre, 'es'));
+    mostrarAviso('');
+    return true;
+  }
+
+  async function iniciar(){
+    const s = await pedir('/api/sesion');
+    if(s.fallo === 401){ irAlLogin(); return; }
+    if(s.fallo){ mostrarAviso(describirFallo('/api/sesion', s.fallo)); el('rolePill').textContent = 'Sin conexión'; el('rolMenu').textContent = 'Sin conexión'; return; }
+    el('rolePill').textContent = 'Rol: ' + s.datos.rol;   // Superadministrador o Administrador
+    el('rolMenu').textContent = 'Rol: ' + s.datos.rol;
+    // Debajo del rol, el nombre de la persona que inició sesión
+    if(s.datos.nombre) el('nombreMenu').textContent = String(s.datos.nombre).trim().toLocaleUpperCase('es-CO');
+
+    // Se avisa de inmediato a quien no es superadministrador (el servidor tampoco le entrega los datos)
+    if(s.datos.rol !== 'Superadministrador'){ mostrarRestringido(); return; }
+
+    if(await cargar()){
+      el('contenido').hidden = false;
+      render();
+    }
+  }
+
+  /* ---------- formato ---------- */
+
+  const pad = n => String(n).padStart(2, '0');
+  function aFecha(v){
+    if(!v) return null;
+    const d = new Date(String(v).includes('T') ? v : String(v).replace(' ', 'T') + 'Z');   // SQLite guarda en UTC
+    return isNaN(d) ? null : d;
+  }
+  function formatAcceso(v){
+    const d = aFecha(v);
+    return d ? pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) : '—';
+  }
+  function formatDia(v){
+    const d = aFecha(v);
+    return d ? pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() : '—';
+  }
+  function diaLocal(v){
+    const d = aFecha(v);
+    return d ? d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) : '';
+  }
+
+  /* ---------- listado ---------- */
+
+  const enAlerta = u => u.estado === 'Bloqueado' || u.fallidos >= UMBRAL;
+
+  function filtrados(){
+    const rol = el('fRol').value, estado = el('fEstado').value, dia = el('fFecha').value, q = norm(el('buscador').value.trim());
+    return usuarios.filter(u =>
+      (!rol || u.rol === rol) &&
+      (!estado || u.estado === estado) &&
+      (!dia || diaLocal(u.acceso) === dia) &&
+      (!q || norm([u.nombre, u.email, u.ip || '', u.cargo || ''].join(' ')).includes(q)));
+  }
+
+  function filaHTML(u){
+    const accion = u.estado === 'Bloqueado'
+      ? `<button class="btn unlock" type="button" data-accion="desbloquear" data-clave="${esc(u.clave)}">Desbloquear</button>`
+      : `<button class="btn" type="button" data-accion="detalle" data-clave="${esc(u.clave)}">Ver detalle</button>`;
+    return `
+      <tr class="${enAlerta(u) ? 'alerta' : ''}">
+        <td class="user-cell"><button class="nombre" type="button" data-accion="detalle" data-clave="${esc(u.clave)}">${esc(u.nombre)}</button><span class="sub">${esc(u.cargo || u.email)}</span></td>
+        <td><span class="rol-pill ${u.rol === 'Superadministrador' ? 'super' : ''}">${esc(u.rol)}</span></td>
+        <td><span class="estado ${esc(u.estado.toLowerCase())}"><span class="dot"></span>${esc(u.estado)}</span></td>
+        <td class="nowrap">${esc(formatAcceso(u.acceso))}</td>
+        <td><span class="ip">${esc(u.ip || '—')}</span></td>
+        <td><span class="intentos ${u.fallidos >= UMBRAL ? 'alto' : ''}">${esc(u.fallidos)}</span></td>
+        <td class="acciones">${accion}</td>
+      </tr>`;
+  }
+
+  function render(){
+    // Los totales son de todos los usuarios; no cambian al filtrar
+    el('statTotal').textContent = usuarios.length;
+    el('statActivas').textContent = usuarios.filter(u => u.estado === 'Activo').length;
+    el('statBloqueadas').textContent = usuarios.filter(u => u.estado === 'Bloqueado').length;
+    el('statFallidos').textContent = usuarios.filter(u => u.fallidos >= UMBRAL).length;
+
+    const lista = filtrados();
+    el('countFiltrados').textContent = lista.length;
+    el('filas').innerHTML = lista.map(filaHTML).join('');
+    el('vacio').textContent = usuarios.length === 0 ? 'Aún no hay usuarios registrados.' : 'No hay usuarios que coincidan con los filtros.';
+    el('vacio').style.display = lista.length === 0 ? 'block' : 'none';
+  }
+
+  /* ---------- detalle ---------- */
+
+  function abrirDetalle(clave){
+    const u = usuarios.find(x => x.clave === clave);
+    if(!u) return;
+    focoPrevio = document.activeElement;
+    el('modalTitulo').textContent = u.nombre;
+    el('modalSub').textContent = (u.tipo === 'administrador' ? 'Administrador del sistema' : 'Gestor') + ' · ' + u.rol;
+
+    const filas = [
+      ['Cargo', u.cargo || '—'],
+      ['Correo', u.email],
+      ['Teléfono', u.telefono || '—'],
+      u.tipo === 'gestor' ? ['Administrador a cargo', u.administradorNombre || '—'] : ['Gestores a cargo', u.gestoresACargo],
+      ['Estado', u.estado],
+      ['Último acceso', formatAcceso(u.acceso)],
+      ['Dirección IP', u.ip || '—'],
+      ['Intentos fallidos', u.fallidos],
+      ['Registrado el', formatDia(u.creado)]
+    ];
+    el('modalDetalle').innerHTML = filas.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+
+    cargarHistorial(u);
+
+    const alerta = el('modalAlerta');
+    alerta.hidden = !enAlerta(u);
+    alerta.textContent = u.estado === 'Bloqueado'
+      ? 'Esta cuenta está bloqueada por intentos fallidos de acceso (' + u.fallidos + '). No puede iniciar sesión hasta que se desbloquee.'
+      : 'Esta cuenta tiene ' + u.fallidos + ' intentos fallidos de acceso: conviene revisar la actividad.';
+
+    el('modalPie').innerHTML = (u.estado === 'Bloqueado'
+      ? `<button class="btn unlock" type="button" data-accion="desbloquear" data-clave="${esc(u.clave)}">Desbloquear cuenta</button>` : '') +
+      '<button class="btn" type="button" id="modalCerrar2">Cerrar</button>';
+    el('modalCerrar2').addEventListener('click', cerrarDetalle);
+
+    el('modal').hidden = false;
+    el('modalCerrar').focus();
+  }
+
+  // Últimos intentos de acceso del usuario, cada uno con su IP
+  async function cargarHistorial(u){
+    const cont = el('modalHistorial');
+    cont.innerHTML = '<h4>Historial de accesos</h4><div class="hist-vacio">Cargando…</div>';
+    const r = await pedir('/api/auditoria/' + encodeURIComponent(u.tipo) + '/' + encodeURIComponent(u.id) + '/historial');
+    if(el('modal').hidden || el('modalTitulo').textContent !== u.nombre) return;   // se cerró o cambió de usuario
+    if(r.fallo){ cont.innerHTML = '<h4>Historial de accesos</h4><div class="hist-vacio">No se pudo cargar el historial.</div>'; return; }
+    if(r.datos.length === 0){
+      cont.innerHTML = '<h4>Historial de accesos</h4><div class="hist-vacio">Aún no hay intentos registrados desde que se activó la bitácora.</div>';
+      return;
+    }
+    cont.innerHTML = '<h4>Historial de accesos (últimos ' + r.datos.length + ')</h4><div class="hist-scroll"><table><thead><tr><th>Fecha</th><th>IP</th><th>Resultado</th></tr></thead><tbody>' +
+      r.datos.map(h => `<tr><td>${esc(formatAcceso(h.fecha))}</td><td><span class="ip">${esc(h.ip || '—')}</span></td><td class="${(h.resultado === 'Exitoso' || h.resultado === 'Contraseña cambiada') ? 'res-ok' : 'res-mal'}">${esc(h.resultado)}</td></tr>`).join('') +
+      '</tbody></table></div>';
+  }
+
+  function cerrarDetalle(){
+    if(el('modal').hidden) return;
+    el('modal').hidden = true;
+    if(focoPrevio && focoPrevio.focus) focoPrevio.focus();
+  }
+
+  el('modalCerrar').addEventListener('click', cerrarDetalle);
+  el('modal').addEventListener('click', e => { if(e.target === el('modal')) cerrarDetalle(); });
+  el('modal').addEventListener('keydown', e => {
+    if(e.key !== 'Tab') return;
+    const focos = Array.from(el('modal').querySelectorAll('button')).filter(b => !b.disabled);
+    if(focos.length === 0) return;
+    const primero = focos[0], ultimo = focos[focos.length - 1];
+    if(e.shiftKey && document.activeElement === primero){ e.preventDefault(); ultimo.focus(); }
+    else if(!e.shiftKey && document.activeElement === ultimo){ e.preventDefault(); primero.focus(); }
+  });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarDetalle(); });
+
+  /* ---------- desbloquear ---------- */
+
+  async function desbloquear(clave){
+    const u = usuarios.find(x => x.clave === clave);
+    if(!u || ocupado) return;
+    if(!confirm('¿Desbloquear la cuenta de ' + u.nombre + '? Quedará activa y sus intentos fallidos volverán a 0.')) return;
+    ocupado = true;
+    try{
+      const r = await fetch('/api/auditoria/' + encodeURIComponent(u.tipo) + '/' + encodeURIComponent(u.id) + '/desbloquear', {method: 'POST'});
+      if(r.status === 401){ irAlLogin(); return; }
+      if(r.status === 403){ mostrarRestringido(); return; }
+      if(!r.ok){
+        const err = await r.json().catch(() => ({}));
+        showToast(err.error || 'No se pudo desbloquear la cuenta (' + r.status + ')');
+      } else {
+        showToast('Cuenta de ' + u.nombre + ' desbloqueada');
+        cerrarDetalle();
+      }
+      if(await cargar()) render();
+    }catch(e){
+      showToast('No se pudo conectar con el servidor');
+    } finally { ocupado = false; }
+  }
+
+  el('filas').addEventListener('click', e => {
+    const b = e.target.closest ? e.target.closest('[data-accion]') : null;
+    if(!b) return;
+    if(b.dataset.accion === 'detalle') abrirDetalle(b.dataset.clave);
+    if(b.dataset.accion === 'desbloquear') desbloquear(b.dataset.clave);
+  });
+  el('modalPie').addEventListener('click', e => {
+    const b = e.target.closest ? e.target.closest('[data-accion="desbloquear"]') : null;
+    if(b) desbloquear(b.dataset.clave);
+  });
+
+  /* ---------- exportar a Excel ---------- */
+
+  const COLUMNAS = ['Tipo', 'Usuario', 'Cargo', 'Correo', 'Rol', 'Estado', 'Último acceso', 'Dirección IP', 'Intentos fallidos'];
+  const ANCHOS = [16, 30, 34, 32, 20, 12, 18, 18, 16];
+
+  function filasExport(){
+    return filtrados().map(u => [
+      u.tipo === 'administrador' ? 'Administrador' : 'Gestor', u.nombre, u.cargo || '', u.email, u.rol, u.estado,
+      formatAcceso(u.acceso), u.ip || '', String(u.fallidos)
+    ]);
+  }
+
+  // --- Archivo .xlsx sin librerías: un .xlsx es un ZIP con varios XML ---
+  function crc32(bytes){
+    let crc = 0xFFFFFFFF;
+    for(const b of bytes){
+      crc ^= b;
+      for(let k = 0; k < 8; k++) crc = (crc & 1) ? (crc >>> 1) ^ 0xEDB88320 : (crc >>> 1);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function crearZip(archivos){
+    const enc = new TextEncoder();
+    const u16 = n => [n & 255, (n >>> 8) & 255];
+    const u32 = n => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+    const partes = [], central = [];
+    let desplazamiento = 0;
+    for(const a of archivos){
+      const nombre = enc.encode(a.nombre), datos = enc.encode(a.contenido);
+      const crc = crc32(datos), t = datos.length;
+      const local = new Uint8Array([...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21),
+        ...u32(crc), ...u32(t), ...u32(t), ...u16(nombre.length), ...u16(0)]);
+      partes.push(local, nombre, datos);
+      central.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21),
+        ...u32(crc), ...u32(t), ...u32(t), ...u16(nombre.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(desplazamiento)]), nombre);
+      desplazamiento += local.length + nombre.length + t;
+    }
+    const tamCentral = central.reduce((s, p) => s + p.length, 0);
+    const fin = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(archivos.length), ...u16(archivos.length), ...u32(tamCentral), ...u32(desplazamiento), ...u16(0)]);
+    return new Blob([...partes, ...central, fin], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  }
+
+  const xmlEsc = s => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  function crearXlsx(filas){
+    const celda = (c, f, texto, negrita) => '<c r="' + String.fromCharCode(65 + c) + f + '" t="inlineStr"' + (negrita ? ' s="1"' : '') + '><is><t xml:space="preserve">' + xmlEsc(texto) + '</t></is></c>';
+    const fila = (f, valores, negrita) => '<row r="' + f + '">' + valores.map((v, c) => celda(c, f, v, negrita)).join('') + '</row>';
+    const hoja = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+      '<cols>' + ANCHOS.map((w, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('') + '</cols>' +
+      '<sheetData>' + fila(1, COLUMNAS, true) + filas.map((v, i) => fila(i + 2, v, false)).join('') + '</sheetData></worksheet>';
+    const NS = 'http://schemas.openxmlformats.org/';
+    return crearZip([
+      {nombre: '[Content_Types].xml', contenido: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="' + NS + 'package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'},
+      {nombre: '_rels/.rels', contenido: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="' + NS + 'package/2006/relationships"><Relationship Id="rId1" Type="' + NS + 'officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+      {nombre: 'xl/workbook.xml', contenido: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="' + NS + 'spreadsheetml/2006/main" xmlns:r="' + NS + 'officeDocument/2006/relationships"><sheets><sheet name="Bitácora" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+      {nombre: 'xl/_rels/workbook.xml.rels', contenido: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="' + NS + 'package/2006/relationships"><Relationship Id="rId1" Type="' + NS + 'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="' + NS + 'officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+      {nombre: 'xl/styles.xml', contenido: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="' + NS + 'spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'},
+      {nombre: 'xl/worksheets/sheet1.xml', contenido: hoja}
+    ]);
+  }
+
+  function descargar(blob, nombre){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  el('btnExportar').addEventListener('click', () => {
+    const filas = filasExport();
+    if(filas.length === 0){ showToast('No hay registros para exportar'); return; }
+    descargar(crearXlsx(filas), 'bitacora-auditoria-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    showToast('Bitácora exportada con ' + filas.length + ' registro' + (filas.length === 1 ? '' : 's'));
+  });
+
+  /* ---------- eventos ---------- */
+
+  ['fRol', 'fEstado', 'fFecha'].forEach(id => el(id).addEventListener('change', render));
+  el('fFecha').addEventListener('input', render);
+  el('buscador').addEventListener('input', render);
+
+  /* menú de usuario */
+  const btnUsuario = el('btnUsuario'), userMenu = el('userMenu');
+  function cerrarMenuUsuario(devolverFoco){
+    if(!userMenu.classList.contains('open')) return;
+    userMenu.classList.remove('open');
+    btnUsuario.setAttribute('aria-expanded', 'false');
+    if(devolverFoco) btnUsuario.focus();
+  }
+  btnUsuario.addEventListener('click', e=>{
+    e.stopPropagation();
+    const abrir = !userMenu.classList.contains('open');
+    userMenu.classList.toggle('open', abrir);
+    btnUsuario.setAttribute('aria-expanded', String(abrir));
+  });
+  document.addEventListener('click', e=>{ if(!e.target.closest('#user')) cerrarMenuUsuario(false); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarMenuUsuario(true); });
+
+  el('btnSalir').addEventListener('click', async () => {
+    try{ await fetch('/api/logout', {method: 'POST'}); }catch(e){}
+    irAlLogin(false);
+  });
+
+  iniciar();
+</script>
+
+</body>
+</html>

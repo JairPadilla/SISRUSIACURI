@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero general de cumplimientos · SISR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#0F3D3B; --pine-deep:#0A2B29; --forest:#1F6F54; --paper:#F5F3EC; --card:#FFFFFF;
+    --ink:#26241F; --ink-soft:#5B5A54; --ink-faint:#8B887C; --line:#DFDACB; --track:#EBE7DA;
+    --paper-raised:#FFFFFF; --radius-m:10px; --warn:#B5502E; --warn-soft:#F6E4DA; --ochre:#B9852F; --ochre-soft:#F3E5CC; --ok:#3F8F70; --ok-soft:#DAE7E0; --bad:#A4513F; --bad-soft:#F4DEE0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Public Sans',system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Source Serif 4',Georgia,serif; color:var(--pine-deep); margin:0;}
+  button,select{font-family:inherit;}
+
+  .topbar{background:linear-gradient(180deg,var(--pine),var(--pine-deep)); color:#EFEEE6; padding:12px clamp(16px,3vw,40px); display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .nav{font-size:13px; line-height:1.4;} .nav small{display:block; color:#C9D3CC;} .nav strong{font-weight:600; color:#fff; font-family:'Source Serif 4',serif; font-size:16px;}
+
+  .topbar-logo{width:40px; height:40px; flex-shrink:0; display:block;}
+
+  /* menú de usuario (rol según el acceso) */
+  .user{position:relative; margin-left:auto; flex-shrink:0;}
+  .user-btn{display:inline-flex; align-items:center; gap:10px; padding:5px 12px 5px 5px; border:1px solid var(--ochre); border-radius:999px; background:var(--paper-raised); color:var(--pine-deep); font:500 13.5px 'Public Sans',sans-serif; cursor:pointer; transition:background .15s ease;}
+  .user-btn:hover,.user-btn[aria-expanded="true"]{background:var(--paper);}
+  .user-btn:focus-visible,.user-menu .item:focus-visible{outline:2px solid var(--ochre); outline-offset:2px;}
+  .user-btn .avatar{width:32px; height:32px; border-radius:50%; background:var(--pine-deep); color:#F5F3EC; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .u-ico{width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;}
+  .user-btn .chev{width:16px; height:16px; color:var(--ink-soft); transition:transform .2s ease;}
+  .user-btn[aria-expanded="true"] .chev{transform:rotate(180deg);}
+  .user-menu{position:absolute; right:0; top:calc(100% + 10px); width:272px; padding:6px; background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-m); box-shadow:0 18px 40px -18px rgba(10,43,41,.38); opacity:0; visibility:hidden; transform:translateY(-6px); transition:opacity .15s ease, transform .15s ease, visibility 0s .15s; z-index:40;}
+  .user-menu.open{opacity:1; visibility:visible; transform:none; transition:opacity .15s ease, transform .15s ease;}
+  .user-menu .info{padding:12px 12px 11px; margin-bottom:6px; border-bottom:1px solid var(--line);}
+  .user-menu .info strong{display:block; font-size:14px; color:var(--pine-deep);}
+  .user-menu .info span{display:block; margin-top:2px; font-size:12.5px; color:var(--ink-soft);}
+  .user-menu .item{display:flex; align-items:center; gap:11px; width:100%; padding:10px 12px; border:none; border-radius:7px; background:none; color:var(--pine-deep); font:500 14px 'Public Sans',sans-serif; text-align:left; text-decoration:none; cursor:pointer;}
+  .user-menu .item .u-ico{color:var(--ink-soft);}
+  .user-menu .item:hover{background:var(--paper);}
+  .user-menu .item.salir:hover{background:var(--warn-soft); color:var(--warn);} .user-menu .item.salir:hover .u-ico{color:var(--warn);}
+  @media (max-width:640px){ .user-btn{padding-right:9px;} .user-btn .rol{display:none;} .user-menu{width:min(272px, calc(100vw - 24px));} }
+
+  main{max-width:1040px; margin:0 auto; padding:40px 20px 56px;}
+  .head{display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; margin-bottom:22px;}
+  h1{font-size:clamp(26px,5vw,34px); line-height:1.15;}
+  .sub{margin:10px 0 0; color:var(--ink-soft); max-width:60ch; font-size:14.5px;}
+  .filtros{display:flex; gap:10px; flex-wrap:wrap;}
+  .filtros select{padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); font-size:13.5px; color:var(--ink);}
+  .filtros select:focus-visible{outline:2px solid var(--forest); outline-offset:1px;}
+
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px;}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px 18px;}
+  .kpi b{display:block; font-family:'Source Serif 4',serif; font-size:26px; line-height:1.2; color:var(--pine-deep);}
+  .kpi.riesgo b{color:var(--bad);} .kpi span{font-size:12.5px; color:var(--ink-soft);}
+
+  .fila{display:grid; grid-template-columns:1.6fr 1fr; gap:14px; margin-bottom:14px;}
+  .card{background:var(--card); border:1px solid var(--line); border-left:3px solid var(--ochre); border-radius:8px; padding:18px 22px; box-shadow:0 6px 18px -14px rgba(10,43,41,.35);}
+  .card h2{font-size:16px;} .card .nota{margin:3px 0 16px; font-size:12px; color:var(--ink-soft);}
+
+  .barra{display:grid; grid-template-columns:130px 1fr 44px; align-items:center; gap:12px; margin-bottom:11px; font-size:13px;}
+  .barra .n{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .pista{height:10px; border-radius:999px; background:var(--track); overflow:hidden;}
+  .pista i{display:block; height:100%; border-radius:999px; min-width:3px;}
+  .barra .v{text-align:right; font-weight:700; font-size:12.5px;}
+  .leyenda{display:flex; gap:16px; flex-wrap:wrap; margin-top:14px; font-size:11.5px; color:var(--ink-soft);}
+  .leyenda i,.ref i{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px;}
+
+  .dona{display:flex; align-items:center; gap:22px; flex-wrap:wrap;}
+  .dona svg{width:132px; height:132px; flex-shrink:0;}
+  .ref{list-style:none; margin:0; padding:0; font-size:13px;} .ref li{display:flex; align-items:center; gap:4px; margin-bottom:8px;} .ref b{margin-left:10px;}
+
+  .linea svg{display:block; width:100%; height:auto;}
+  .linea text{font-family:'Public Sans',sans-serif;}
+
+  .rotulo{display:flex; align-items:center; gap:10px; margin:22px 0 10px; font-size:12.5px; color:var(--ink-faint);}
+  .rotulo span{background:var(--ok-soft); color:var(--forest); font-weight:600; border-radius:999px; padding:1px 9px;}
+  .tabla{background:var(--card); border:1px solid var(--line); border-radius:8px; overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; min-width:640px; font-size:13.5px;}
+  th{text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; padding:12px 16px; border-bottom:1px solid var(--line);}
+  td{padding:13px 16px; border-bottom:1px solid #EEEADD; vertical-align:middle;} tr:last-child td{border-bottom:0;}
+  td .s{font-weight:700;} td small{display:block; font-size:11.5px; color:var(--ink-soft);}
+  .cump{display:flex; align-items:center; gap:10px; min-width:150px;} .cump .pista{flex:1;} .cump b{font-size:12.5px; min-width:36px; text-align:right;}
+  .pill{font-size:11.5px; font-weight:600; padding:3px 11px; border-radius:999px; white-space:nowrap;}
+  .pill.ok{background:var(--ok-soft); color:var(--forest);} .pill.curso{background:var(--ochre-soft); color:#8F6620;} .pill.riesgo{background:var(--bad-soft); color:var(--bad);}
+
+  .vacio{padding:26px; text-align:center; color:var(--ink-soft); font-size:14px;}
+  .alerta{background:var(--bad-soft); color:var(--bad); border-radius:8px; padding:14px 18px; margin-bottom:16px; font-size:14px;}
+  .pie{margin-top:30px; text-align:center; font-size:11.5px; color:var(--ink-faint);}
+
+  @media (max-width:860px){ .kpis{grid-template-columns:1fr 1fr;} .fila{grid-template-columns:1fr;} }
+  @media (max-width:520px){ .barra{grid-template-columns:96px 1fr 40px;} }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="u-usuario" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="u-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="u-inicio" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="u-salir" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol></defs></svg>
+  <svg class="topbar-logo" viewBox="0 0 100 100" role="img" aria-label="Logo del SISR">
+    <circle cx="50" cy="50" r="50" fill="#B9852F"/>
+    <circle cx="50" cy="50" r="43.5" fill="#0C3432"/>
+    <rect x="31" y="57" width="8" height="12" rx="1" fill="#D9A94F"/>
+    <rect x="44" y="48" width="8" height="21" rx="1" fill="#D9A94F"/>
+    <rect x="57" y="37.5" width="8" height="31.5" rx="1" fill="#D9A94F"/>
+    <polyline points="26.5,31.6 39.2,44.4 75.4,14.1" fill="none" stroke="#F5F3EC" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="nav"><strong>Tablero general de cumplimientos</strong></div>
+  <div class="user" id="user">
+    <button class="user-btn" id="btnUsuario" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu">
+      <span class="avatar"><svg class="u-ico" aria-hidden="true"><use href="#u-usuario"/></svg></span>
+      <span class="rol" id="rolTxt">Rol: …</span>
+      <svg class="u-ico chev" aria-hidden="true"><use href="#u-abajo"/></svg>
+    </button>
+    <div class="user-menu" id="userMenu" role="menu" aria-label="Menú de usuario">
+      <div class="info"><strong id="rolMenu">Rol: …</strong><span id="vistaMenu">SISR</span></div>
+      <a class="item" id="linkPanel" role="menuitem" href="panel-administrativo%20(1).html"><svg class="u-ico" aria-hidden="true"><use href="#u-inicio"/></svg>Panel principal</a>
+      <button class="item salir" id="btnSalir" role="menuitem" type="button"><svg class="u-ico" aria-hidden="true"><use href="#u-salir"/></svg>Cerrar sesión</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="head">
+    <div>
+      <h1>Tablero general de avances y cumplimientos</h1>
+      <p class="sub">Panorama consolidado del cumplimiento del Plan de Desarrollo por sector, calculado con los avances aprobados. El superadministrador ve todos los sectores; el administrador y el gestor líder ven únicamente los suyos.</p>
+    </div>
+    <div class="filtros">
+      <select id="fPeriodo" aria-label="Periodo"></select>
+      <select id="fSector" aria-label="Sector"><option value="">Sector: Todos</option></select>
+    </div>
+  </div>
+
+  <div id="aviso"></div>
+
+  <section class="kpis" aria-label="Indicadores generales">
+    <div class="kpi"><b id="kGeneral">–</b><span>Cumplimiento general</span></div>
+    <div class="kpi"><b id="kInd">–</b><span>Indicadores en seguimiento</span></div>
+    <div class="kpi"><b id="kSec">–</b><span>Sectores activos</span></div>
+    <div class="kpi riesgo"><b id="kRiesgo">–</b><span>Sectores en riesgo (&lt;30%)</span></div>
+  </section>
+
+  <div class="fila">
+    <section class="card">
+      <h2>Cumplimiento por sector</h2>
+      <p class="nota">Porcentaje promedio de avance aprobado sobre la meta del cuatrienio</p>
+      <div id="barras"></div>
+      <div class="leyenda"><span><i style="background:var(--ok)"></i>≥ 70% al día</span><span><i style="background:var(--ochre)"></i>30–69% en curso</span><span><i style="background:var(--bad)"></i>&lt; 30% en riesgo</span></div>
+    </section>
+    <section class="card">
+      <h2>Estado de los reportes</h2>
+      <p class="nota">Distribución de avances del periodo</p>
+      <div class="dona" id="dona"></div>
+    </section>
+  </div>
+
+  <section class="card linea">
+    <h2>Evolución del cumplimiento general</h2>
+    <p class="nota">Promedio por trimestre — año en curso</p>
+    <div id="evolucion"></div>
+  </section>
+
+  <div class="rotulo">Detalle por sector <span id="nSectores">0</span></div>
+  <div class="tabla">
+    <table>
+      <thead><tr><th>Sector</th><th>Gestores</th><th>Cumplimiento</th><th>Estado</th><th>Indicadores</th></tr></thead>
+      <tbody id="filas"></tbody>
+    </table>
+  </div>
+
+  <p class="pie">SISR · Sistema de Seguimiento y Cumplimiento del Plan de Desarrollo y Rendición de Cuentas — Alcaldía de Usiacurí</p>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const COLOR = {'Al día':'var(--ok)', 'En curso':'var(--ochre)', 'En riesgo':'var(--bad)'};
+  const CLASE = {'Al día':'ok', 'En curso':'curso', 'En riesgo':'riesgo'};
+  let rutaSalida = '/api/logout', primera = true;
+
+  async function cargar(){
+    const p = new URLSearchParams({ periodo: $('fPeriodo').value || 'actual', sector: $('fSector').value });
+    try{
+      const r = await fetch('/api/tablero?' + p);
+      if(r.status === 401){ location.href = '/iniciar-sesion.html?volver=/tablero-general.html'; return; }
+      const d = await r.json().catch(() => ({}));
+      if(!r.ok){
+        $('aviso').innerHTML = '<div class="alerta">' + esc(d.error || 'No se pudo cargar el tablero (' + r.status + ').') + '</div>';
+        if(d.rol) ponerRol(d.rol, nombreDe(d)); else ponerRol('', 'Sin datos');
+        return;
+      }
+      $('aviso').innerHTML = '';
+      pintar(d);
+    }catch(e){
+      $('aviso').innerHTML = '<div class="alerta">No se pudo conectar con el servidor. Comprueba que "node server.js" esté en ejecución.</div>';
+      if($('rolTxt').textContent === 'Rol: …') ponerRol('', 'Sin conexión');
+    }
+  }
+
+  // El rol sale de la cuenta con la que se inició sesión; debajo va lo que puede ver
+  // Debajo del rol va el nombre de la persona que inició sesión (en mayúsculas);
+  // si el servidor no lo envía, se muestra el ámbito (sectores que puede ver)
+  function ponerRol(rol, nombre, ambito){
+    const texto = rol || nombre || ambito;
+    $('rolTxt').textContent = rol ? 'Rol: ' + rol : texto;
+    $('rolMenu').textContent = rol ? 'Rol: ' + rol : texto;
+    $('vistaMenu').textContent = rol
+      ? (nombre ? String(nombre).trim().toLocaleUpperCase('es-CO') : (ambito || 'SISR'))
+      : 'SISR';
+    $('vistaMenu').title = ambito || '';
+  }
+
+  // Nombre completo del usuario autenticado, según los campos que envíe el servidor
+  function nombreDe(d){
+    const u = d.usuario;
+    return d.nombre || d.nombreCompleto || d.nombre_completo ||
+      (u && typeof u === 'object' ? (u.nombre || u.nombreCompleto || u.nombre_completo) : u) || '';
+  }
+
+  function opciones(sel, lista, actual, todos){
+    sel.innerHTML = (todos ? '<option value="">' + todos + '</option>' : '') +
+      lista.map(o => '<option value="' + esc(o.valor) + '"' + (o.valor === actual ? ' selected' : '') + '>' + (todos ? 'Sector: ' : 'Periodo: ') + esc(o.etiqueta) + '</option>').join('');
+  }
+
+  function pintar(d){
+    rutaSalida = d.sesion === 'gestor' ? '/api/gestor/logout' : '/api/logout';
+    const [rolVista, ...ambito] = d.vista.split(' · ');   // «Superadministrador · Todos los sectores»
+    ponerRol(d.rol || rolVista, nombreDe(d), ambito.join(' · '));
+    opciones($('fPeriodo'), d.periodos, d.periodo);
+    opciones($('fSector'), d.sectores.map(s => ({valor:s, etiqueta:s})), d.sector, 'Sector: Todos');
+
+    $('kGeneral').textContent = d.kpi.general + '%';
+    $('kInd').textContent = d.kpi.indicadores;
+    $('kSec').textContent = d.kpi.sectoresActivos;
+    $('kRiesgo').textContent = d.kpi.sectoresRiesgo;
+
+    const vacio = '<div class="vacio">Todavía no hay indicadores asignados a tus gestores.</div>';
+    $('barras').innerHTML = d.porSector.length ? d.porSector.map(s =>
+      '<div class="barra"><span class="n" title="' + esc(s.sector) + '">' + esc(s.sector) + '</span>' +
+      '<div class="pista"><i style="width:' + s.cumplimiento + '%; background:' + COLOR[s.estado] + '"></i></div>' +
+      '<span class="v">' + s.cumplimiento + '%</span></div>').join('') : vacio;
+
+    $('nSectores').textContent = d.porSector.length;
+    $('filas').innerHTML = d.porSector.length ? d.porSector.map(s =>
+      '<tr><td><span class="s">' + esc(s.sector) + '</span><small>' + esc(s.administradores.join(', ')) + '</small></td>' +
+      '<td>' + esc(s.gestores.join(', ')) + '</td>' +
+      '<td><div class="cump"><div class="pista"><i style="width:' + s.cumplimiento + '%; background:' + COLOR[s.estado] + '"></i></div><b>' + s.cumplimiento + '%</b></div></td>' +
+      '<td><span class="pill ' + CLASE[s.estado] + '">' + s.estado + '</span></td>' +
+      '<td>' + s.indicadores + '</td></tr>').join('') : '<tr><td colspan="5">' + vacio + '</td></tr>';
+
+    dona(d.reportes);
+    linea(d.evolucion);
+  }
+
+  function dona(r){
+    const C = 2 * Math.PI * 44, partes = [['Aprobados', r.aprobados, 'var(--ok)'], ['Pendientes', r.pendientes, 'var(--ochre)'], ['Devueltos', r.devueltos, 'var(--bad)']];
+    let desde = 0, arcos = '<circle cx="60" cy="60" r="44" fill="none" stroke="var(--track)" stroke-width="16"/>';
+    if(r.total) partes.forEach(([, n, color]) => {
+      if(!n) return;
+      const largo = n / r.total * C;
+      arcos += '<circle cx="60" cy="60" r="44" fill="none" stroke="' + color + '" stroke-width="16" stroke-dasharray="' + largo + ' ' + (C - largo) +
+               '" stroke-dashoffset="' + (-desde) + '" transform="rotate(-90 60 60)"/>';
+      desde += largo;
+    });
+    $('dona').innerHTML = '<svg viewBox="0 0 120 120" role="img" aria-label="' + r.total + ' reportes">' + arcos +
+      '<text x="60" y="58" text-anchor="middle" font-size="22" font-weight="700" fill="var(--pine-deep)">' + r.total + '</text>' +
+      '<text x="60" y="73" text-anchor="middle" font-size="9" fill="var(--ink-soft)">reportes</text></svg>' +
+      '<ul class="ref">' + partes.map(([t, n, c]) => '<li><i style="background:' + c + '"></i>' + t + '<b>' + n + '</b></li>').join('') + '</ul>';
+  }
+
+  function linea(ev){
+    const W = 640, H = 190, x0 = 34, x1 = W - 34, top = 28, alto = 112;
+    const X = i => x0 + i * (x1 - x0) / (ev.length - 1), Y = v => top + (1 - v / 100) * alto;
+    const pts = ev.map((e, i) => e.valor === null ? null : [X(i), Y(e.valor), e]).filter(Boolean);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Evolución del cumplimiento general por trimestre">';
+    [0, 50, 100].forEach(v => s += '<line x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--line)" stroke-dasharray="3 4"/>');
+    if(pts.length > 1) s += '<polygon points="' + pts.map(p => p[0] + ',' + p[1]).join(' ') + ' ' + pts[pts.length-1][0] + ',' + Y(0) + ' ' + pts[0][0] + ',' + Y(0) + '" fill="var(--ok)" opacity=".1"/>' +
+      '<polyline points="' + pts.map(p => p[0] + ',' + p[1]).join(' ') + '" fill="none" stroke="var(--ok)" stroke-width="2.5" stroke-linejoin="round"/>';
+    pts.forEach(p => s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4.5" fill="var(--ok)"/>' +
+      '<text x="' + p[0] + '" y="' + (p[1] - 11) + '" text-anchor="middle" font-size="12" font-weight="700" fill="var(--pine-deep)">' + p[2].valor + '%</text>');
+    ev.forEach((e, i) => s += '<text x="' + X(i) + '" y="' + (H - 12) + '" text-anchor="' + (i === 0 ? 'start' : i === ev.length - 1 ? 'end' : 'middle') +
+      '" font-size="11" fill="var(--ink-soft)">' + e.etiqueta + (e.actual ? ' (actual)' : '') + '</text>');
+    $('evolucion').innerHTML = s + '</svg>';
+  }
+
+  /* ---------- menú de usuario ---------- */
+  const btnUsuario = document.getElementById('btnUsuario');
+  const userMenu = document.getElementById('userMenu');
+  function cerrarMenuUsuario(devolverFoco){
+    if(!userMenu.classList.contains('open')) return;
+    userMenu.classList.remove('open');
+    btnUsuario.setAttribute('aria-expanded', 'false');
+    if(devolverFoco) btnUsuario.focus();
+  }
+  btnUsuario.addEventListener('click', e=>{
+    e.stopPropagation();
+    const abrir = !userMenu.classList.contains('open');
+    userMenu.classList.toggle('open', abrir);
+    btnUsuario.setAttribute('aria-expanded', String(abrir));
+  });
+  document.addEventListener('click', e=>{ if(!e.target.closest('#user')) cerrarMenuUsuario(false); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarMenuUsuario(true); });
+  ['fPeriodo', 'fSector'].forEach(id => $(id).addEventListener('change', cargar));
+  $('btnSalir').addEventListener('click', async () => { await fetch(rutaSalida, {method:'POST'}); location.href = '/iniciar-sesion.html'; });
+  cargar();
+</script>
+</body>
+</html>

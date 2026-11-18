@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel administrativo · SISR Usiacurí</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23B9852F'/%3E%3Ccircle cx='50' cy='50' r='43.5' fill='%230C3432'/%3E%3Cpolyline points='26.5,31.6 39.2,44.4 75.4,14.1' fill='none' stroke='%23F5F3EC' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --header-bg: #0c3432;
+    --drawer-bg: #0a2b29;
+    --page-bg: #f5f3ec;
+    --card-bg: #ffffff;
+    --accent: #b9852f;
+    --gold: #e6c98a;
+    --heading: #0a2b29;
+    --text-secondary: #696962;
+    --section-label: #9f9d93;
+    --input-bg: #fcfbf7;
+    --input-border: #dfdacb;
+    --pill-bg: #dae7e0;
+    --pill-text: #4e8d77;
+    --divider: #e3ddc9;
+    --shadow: rgba(10, 43, 41, 0.08);
+    --gutter: clamp(16px, 3vw, 32px);   /* margen izquierdo común: hamburguesa y título quedan alineados */
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--page-bg);
+    color: var(--heading);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { display: flex; flex-direction: column; }
+  html.bloqueado { overflow: hidden; }
+
+  button { font-family: inherit; }
+  .ico { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ================= BARRA SUPERIOR ================= */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--divider);
+    padding: 10px var(--gutter);
+    min-height: 74px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  /* Menú de hamburguesa (arriba a la izquierda) */
+  .hamburger {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--input-border);
+    border-radius: 10px;
+    background: var(--card-bg);
+    color: var(--heading);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .hamburger:hover { background: var(--input-bg); border-color: var(--accent); }
+  .hamburger:focus-visible, .user-btn:focus-visible, .brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .hamburger svg { width: 22px; height: 22px; stroke-width: 2; }
+
+  /* Logo */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 8px;
+    min-width: 0;
+  }
+  .brand-logo {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 8px rgba(12, 52, 50, 0.22));
+  }
+  .brand-row { display: flex; align-items: baseline; gap: 9px; }
+  .brand-name {
+    font-family: 'Lora', Georgia, serif;
+    font-weight: 700;
+    font-size: 29px;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: var(--heading);
+  }
+  .brand-version {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--pill-text);
+    background: var(--pill-bg);
+    padding: 3px 9px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .brand-sub {
+    display: none;
+    margin: 5px 0 0;
+    max-width: 400px;
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* Menú desplegable de usuario (arriba a la derecha) */
+  .user { position: relative; margin-left: auto; flex-shrink: 0; }
+
+  .user-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 12px 5px 5px;
+    border: 1px solid var(--input-border);
+    border-radius: 100px;
+    background: var(--card-bg);
+    color: var(--heading);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .user-btn:hover, .user-btn[aria-expanded="true"] { background: var(--input-bg); border-color: var(--accent); }
+  .user-btn .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--header-bg);
+    color: #f5f3ec;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .user-btn .avatar svg { width: 17px; height: 17px; }
+  .user-btn .rol { white-space: nowrap; }
+  .user-btn .chev { width: 16px; height: 16px; color: var(--text-secondary); transition: transform 0.2s ease; }
+  .user-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+  .user-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 272px;
+    padding: 6px;
+    background: var(--card-bg);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    box-shadow: 0 18px 40px -18px rgba(10, 43, 41, 0.38);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s 0.15s;
+    z-index: 40;
+  }
+  .user-menu.open { opacity: 1; visibility: visible; transform: none; transition: opacity 0.15s ease, transform 0.15s ease; }
+
+  .user-menu .info { padding: 12px 12px 11px; margin-bottom: 6px; border-bottom: 1px solid var(--divider); }
+  .user-menu .info strong { display: block; font-size: 14px; color: var(--heading); }
+  .user-menu .info span { display: block; margin-top: 2px; font-size: 12.5px; color: var(--text-secondary); }
+
+  .user-menu .item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 7px;
+    background: none;
+    color: var(--heading);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .user-menu .item svg { width: 17px; height: 17px; color: var(--text-secondary); }
+  .user-menu .item:hover, .user-menu .item:focus-visible { background: var(--input-bg); outline: none; }
+  .user-menu .item.salir:hover, .user-menu .item.salir:focus-visible { background: #f6e4da; color: #a15b4a; }
+  .user-menu .item.salir:hover svg, .user-menu .item.salir:focus-visible svg { color: #a15b4a; }
+
+  /* ================= CAMBIO DE CONTRASEÑA ================= */
+  .pw-overlay { position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(10, 43, 41, 0.55); }
+  .pw-overlay.open { display: flex; }
+  .pw-card { width: 100%; max-width: 420px; max-height: 100%; overflow: auto; background: var(--card-bg); border: 1px solid var(--divider); border-left: 3px solid var(--accent); border-radius: 10px; padding: 22px 24px 20px; box-shadow: 0 18px 48px rgba(10, 43, 41, 0.28); }
+  .pw-card h2 { margin: 0 0 4px; font-family: 'Lora', Georgia, serif; font-size: 20px; color: var(--heading); }
+  .pw-card .pw-sub { margin: 0 0 16px; font-size: 13px; color: var(--text-secondary); }
+  .pw-field + .pw-field { margin-top: 14px; }
+  .pw-field label { display: block; margin-bottom: 5px; font-size: 13px; font-weight: 600; color: var(--heading); }
+  .pw-field input { width: 100%; padding: 10px 12px; font: inherit; font-size: 14.5px; color: var(--heading); background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; }
+  .pw-field input:focus { outline: none; border-color: #1f6f54; background: #fff; box-shadow: 0 0 0 3px #e7efe9; }
+  .pw-hint { margin: 5px 0 0; font-size: 12px; color: var(--text-secondary); }
+  .pw-show { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--heading); cursor: pointer; }
+  .pw-msg { display: none; margin-top: 14px; padding: 10px 12px; border-radius: 6px; font-size: 13.5px; line-height: 1.45; }
+  .pw-msg.error { display: block; background: #fbefea; border: 1px solid #b5502e; color: #b5502e; }
+  .pw-msg.ok { display: block; background: #e7efe9; border: 1px solid #1f6f54; color: #0a2b29; }
+  .pw-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .pw-btn { padding: 10px 18px; font: inherit; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; border: 1px solid var(--header-bg); }
+  .pw-btn.sec { background: #fff; color: var(--heading); border-color: var(--input-border); }
+  .pw-btn.pri { background: var(--header-bg); color: #fff; }
+  .pw-btn.pri:hover:not(:disabled) { background: #1f6f54; border-color: #1f6f54; }
+  .pw-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* ================= PANEL LATERAL (DRAWER) ================= */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(10, 43, 41, 0.55);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0s 0.25s;
+  }
+  .scrim.open { opacity: 1; visibility: visible; transition: opacity 0.25s ease; }
+
+  .drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    width: min(332px, 88vw);
+    display: flex;
+    flex-direction: column;
+    background: var(--drawer-bg);
+    color: #f5f3ec;
+    box-shadow: 18px 0 44px -22px rgba(0, 0, 0, 0.55);
+    transform: translateX(-102%);
+    visibility: hidden;
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0.28s;
+  }
+  .drawer.open { transform: none; visibility: visible; transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+  .drawer-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 14px 14px 18px;
+    border-bottom: 1px solid rgba(245, 243, 236, 0.12);
+  }
+  .drawer-head .brand-logo { width: 44px; height: 44px; filter: none; }
+  .drawer-head .t { font-family: 'Lora', Georgia, serif; font-weight: 700; font-size: 22px; line-height: 1; }
+  .drawer-head .v { display: inline-block; margin-top: 6px; font-size: 10.5px; color: #cfe0d6; background: rgba(245, 243, 236, 0.1); padding: 2px 9px; border-radius: 100px; }
+  .drawer-close {
+    margin-left: auto;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(245, 243, 236, 0.22);
+    border-radius: 9px;
+    background: transparent;
+    color: #f5f3ec;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+  }
+  .drawer-close:hover { background: rgba(245, 243, 236, 0.1); }
+  .drawer-close svg { width: 18px; height: 18px; stroke-width: 2; }
+  .drawer a:focus-visible, .drawer button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+
+  .drawer-nav { flex: 1; overflow-y: auto; padding: 12px 10px 16px; }
+  .drawer-label { margin: 6px 12px 8px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8fa8a0; }
+
+  .nav-home, .grupo-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 9px;
+    background: none;
+    color: #f5f3ec;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .nav-home:hover, .grupo-btn:hover { background: rgba(245, 243, 236, 0.07); }
+  .nav-home.activo { background: rgba(245, 243, 236, 0.09); box-shadow: inset 3px 0 0 var(--accent); }
+
+  .gi {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(245, 243, 236, 0.09);
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .gi svg { width: 18px; height: 18px; }
+  .grupo-btn .gt { flex: 1; }
+  .grupo-btn .chev { width: 16px; height: 16px; color: #9fb5ad; transition: transform 0.2s ease; }
+  .grupo.abierto > .grupo-btn { background: rgba(245, 243, 236, 0.08); }
+  .grupo.abierto > .grupo-btn .chev { transform: rotate(90deg); }
+
+  .grupo { margin-top: 2px; }
+  .grupo-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.25s ease; }
+  .grupo.abierto .grupo-panel { grid-template-rows: 1fr; }
+  .grupo-panel > ul {
+    overflow: hidden;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    visibility: hidden;
+    transition: visibility 0s 0.25s;
+  }
+  .grupo.abierto .grupo-panel > ul { visibility: visible; transition: visibility 0s; }
+
+  .sub {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin: 0 0 0 28px;
+    padding: 9px 12px;
+    border-left: 1px solid rgba(245, 243, 236, 0.15);
+    border-radius: 0 8px 8px 0;
+    color: #d8e2de;
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.35;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .sub svg { width: 17px; height: 17px; color: #9fb5ad; flex-shrink: 0; transition: color 0.15s ease; }
+  .sub:hover { background: rgba(245, 243, 236, 0.08); color: #ffffff; border-left-color: var(--accent); }
+  .sub:hover svg { color: var(--gold); }
+  .grupo-panel > ul > li:first-child { padding-top: 4px; }
+  .grupo-panel > ul > li:last-child { padding-bottom: 6px; }
+
+  .drawer-foot { padding: 14px 18px; border-top: 1px solid rgba(245, 243, 236, 0.12); font-size: 11.5px; line-height: 1.55; color: #8fa8a0; }
+
+  /* ================= PORTADA ================= */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, var(--header-bg) 0%, #0a2b29 100%);
+    color: #f5f3ec;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    right: -120px;
+    top: -140px;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(185, 133, 47, 0.30), rgba(185, 133, 47, 0) 66%);
+    pointer-events: none;
+  }
+  .hero-inner {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 780px;
+    padding: 56px var(--gutter) 70px;   /* mismo margen izquierdo que la hamburguesa */
+  }
+  .hero .kicker { margin: 0 0 10px; font-size: 13px; color: #b9c4c1; }
+  .hero h1 {
+    font-family: 'Lora', Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(30px, 4.6vw, 46px);
+    line-height: 1.15;
+    margin: 0 0 16px;
+    color: #f5f3ec;
+  }
+  .hero .lead { margin: 0; max-width: 54ch; font-size: 16px; line-height: 1.65; color: #cdd9d5; }
+
+  .hero-foot {
+    position: relative;
+    z-index: 1;
+    padding: 0 var(--gutter) 22px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #8fa8a0;
+  }
+
+  @media (min-width: 1100px) { .brand-sub { display: block; } }
+  @media (max-width: 560px) {
+    .topbar { gap: 10px; padding: 8px var(--gutter); min-height: 66px; }
+    .brand-logo { width: 40px; height: 40px; }
+    .brand-name { font-size: 24px; }
+    .brand-version { display: none; }
+    .user-btn { padding-right: 9px; }
+    .user-btn .rol { display: none; }
+    .user-menu { width: min(272px, calc(100vw - 24px)); }
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<!-- Íconos (se reutilizan con <use>) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
+    <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-usuario" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-inicio" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-llave" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-salir" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="i-flecha" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+
+    <!-- secciones -->
+    <symbol id="i-tablero" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+    <symbol id="i-seguridad" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-config" viewBox="0 0 24 24"><line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><line x1="14" y1="2" x2="14" y2="6"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="22"/></symbol>
+    <symbol id="i-estructura" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+    <symbol id="i-asignaciones" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></symbol>
+    <symbol id="i-cumplimientos" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-reportes" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+    <symbol id="i-bitacora" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+
+    <!-- módulos -->
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
+    <symbol id="i-respaldo" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 12a9 3 0 0 0 5 2.69"/><path d="M21 9.3V5"/><path d="M3 5v14a9 3 0 0 0 6.47 2.88"/><path d="M12 12v4h4"/><path d="M13 20a5 5 0 0 0 9-3 4.5 4.5 0 0 0-4.5-4.5c-1.33 0-2.54.54-3.41 1.41L12 16"/></symbol>
+    <symbol id="i-copia" viewBox="0 0 24 24"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></symbol>
+    <symbol id="i-admin" viewBox="0 0 24 24"><circle cx="18" cy="15" r="3"/><circle cx="9" cy="7" r="4"/><path d="M10 15H6a4 4 0 0 0-4 4v2"/><path d="m21.7 16.4-.9-.3"/><path d="m15.2 13.9-.9-.3"/><path d="m16.6 18.7.3-.9"/><path d="m19.1 12.2.3-.9"/><path d="m19.6 18.7-.4-1"/><path d="m16.8 12.3-.4-1"/><path d="m14.3 16.6 1-.4"/><path d="m20.7 13.8 1-.4"/></symbol>
+    <symbol id="i-gestores" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-marca" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+    <symbol id="i-lineas" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></symbol>
+    <symbol id="i-programas" viewBox="0 0 24 24"><path d="M20 17a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.9a2 2 0 0 1-1.69-.9l-.81-1.2a2 2 0 0 0-1.67-.9H8a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2z"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/></symbol>
+    <symbol id="i-productos" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-asignar" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></symbol>
+    <symbol id="i-listado" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
+    <symbol id="i-revision" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></symbol>
+    <symbol id="i-avance" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></symbol>
+    <symbol id="i-estado" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+    <symbol id="i-hoja" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></symbol>
+    <symbol id="i-rendicion" viewBox="0 0 24 24"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></symbol>
+    <symbol id="i-auditoria" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
+
+    <!-- logo del SISR (se usa en la barra superior y en el panel lateral) -->
+    <symbol id="logo-sisr" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="50" fill="#B9852F"/>
+      <circle cx="50" cy="50" r="43.5" fill="#0C3432"/>
+      <rect x="31" y="57" width="8" height="12" rx="1" fill="#D9A94F"/>
+      <rect x="44" y="48" width="8" height="21" rx="1" fill="#D9A94F"/>
+      <rect x="57" y="37.5" width="8" height="31.5" rx="1" fill="#D9A94F"/>
+      <polyline points="26.5,31.6 39.2,44.4 75.4,14.1" fill="none" stroke="#F5F3EC" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ============ BARRA SUPERIOR ============ -->
+<header class="topbar">
+  <!-- 1. Menú de hamburguesa -->
+  <button class="hamburger" id="btnMenu" type="button" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="drawer">
+    <svg class="ico" aria-hidden="true"><use href="#i-menu"/></svg>
+  </button>
+
+  <a class="brand" href="panel-administrativo%20(1).html" aria-label="SISR · Panel administrativo">
+    <svg class="brand-logo" role="img" aria-label="Logo del SISR"><use href="#logo-sisr"/></svg>
+    <div>
+      <div class="brand-row">
+        <span class="brand-name">SISR</span>
+        <span class="brand-version">Versión 01</span>
+      </div>
+      <p class="brand-sub">Sistema de seguimiento y cumplimiento del plan de desarrollo y rendición de cuentas</p>
+    </div>
+  </a>
+
+  <!-- 3. Menú desplegable de usuario -->
+  <div class="user" id="user">
+    <button class="user-btn" id="btnUsuario" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="userMenu">
+      <span class="avatar"><svg class="ico" aria-hidden="true"><use href="#i-usuario"/></svg></span>
+      <span class="rol" id="rolTxt">Rol: …</span>
+      <svg class="ico chev" aria-hidden="true"><use href="#i-abajo"/></svg>
+    </button>
+    <div class="user-menu" id="userMenu" role="menu" aria-label="Menú de usuario">
+      <div class="info">
+        <strong id="rolMenu">Rol: …</strong>
+        <span id="vistaMenu">SISR</span>
+      </div>
+      <button class="item" id="btnCambiarPw" role="menuitem" type="button">
+        <svg class="ico" aria-hidden="true"><use href="#i-llave"/></svg>Cambiar contraseña
+      </button>
+      <button class="item salir" id="btnSalir" role="menuitem" type="button">
+        <svg class="ico" aria-hidden="true"><use href="#i-salir"/></svg>Cerrar sesión
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 2. PANEL LATERAL DE NAVEGACIÓN ============ -->
+<div class="scrim" id="scrim"></div>
+
+<aside class="drawer" id="drawer" aria-label="Menú de navegación">
+  <div class="drawer-head">
+    <svg class="brand-logo" aria-hidden="true"><use href="#logo-sisr"/></svg>
+    <div>
+      <div class="t">SISR</div>
+      <span class="v">Versión 01</span>
+    </div>
+    <button class="drawer-close" id="btnCerrar" type="button" aria-label="Cerrar menú de navegación">
+      <svg class="ico" aria-hidden="true"><use href="#i-cerrar"/></svg>
+    </button>
+  </div>
+
+  <nav class="drawer-nav" id="drawerNav" aria-label="Módulos del sistema">
+    <p class="drawer-label">Módulos</p>
+    <div id="drawerGrupos"></div>
+  </nav>
+
+  <div class="drawer-foot">Sistema de Seguimiento y Cumplimiento del Plan de Desarrollo y Rendición de Cuentas</div>
+</aside>
+
+<!-- ============ CONTENIDO ============ -->
+<section class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Plan de Desarrollo Municipal</p>
+    <h1>Panel administrativo</h1>
+    <p class="lead">Abre el menú con el botón de la esquina superior izquierda para acceder a los módulos y administrar el plan de desarrollo.</p>
+  </div>
+  <p class="hero-foot">SISR · Sistema de Seguimiento y Cumplimiento del Plan de Desarrollo y Rendición de Cuentas</p>
+</section>
+
+<div class="pw-overlay" id="pwOverlay">
+  <div class="pw-card" role="dialog" aria-modal="true" aria-labelledby="pwTitulo">
+    <h2 id="pwTitulo">Cambiar contraseña</h2>
+    <p class="pw-sub">Por seguridad, confirma tu contraseña actual antes de elegir una nueva.</p>
+    <form id="pwForm" novalidate>
+      <div class="pw-field">
+        <label for="pwActual">Contraseña actual</label>
+        <input type="password" id="pwActual" autocomplete="current-password" required>
+      </div>
+      <div class="pw-field">
+        <label for="pwNueva">Nueva contraseña</label>
+        <input type="password" id="pwNueva" autocomplete="new-password" minlength="8" required>
+        <p class="pw-hint">Mínimo 8 caracteres. Usa letras, números y símbolos.</p>
+      </div>
+      <div class="pw-field">
+        <label for="pwConfirmar">Confirmar nueva contraseña</label>
+        <input type="password" id="pwConfirmar" autocomplete="new-password" required>
+      </div>
+      <label class="pw-show"><input type="checkbox" id="pwMostrar"> Mostrar contraseñas</label>
+      <div class="pw-msg" id="pwMsg" role="alert"></div>
+      <div class="pw-actions">
+        <button type="button" class="pw-btn sec" id="pwCancelar">Cancelar</button>
+        <button type="submit" class="pw-btn pri" id="pwGuardar">Guardar contraseña</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  /* ------------------------------------------------------------------
+     Módulos del sistema. Para agregar o cambiar un módulo se edita solo
+     esta lista: el panel lateral se dibuja desde aquí.
+     ------------------------------------------------------------------ */
+  const MODULOS = [
+    { id: 'tablero', titulo: 'Tablero principal', icono: 'i-tablero', items: [
+      { texto: 'Tablero general de cumplimiento', href: 'tablero-general.html', icono: 'i-gauge' } ] },
+    { id: 'seguridad', titulo: 'Seguridad', icono: 'i-seguridad', items: [
+      { texto: 'Gestión de administradores', href: 'gestion-administradores.html', icono: 'i-admin' },
+      { texto: 'Gestión de gestores', href: 'asignacion-gestores.html', icono: 'i-gestores' } ] },
+    { id: 'config', titulo: 'Configuración del sistema', icono: 'i-config', items: [
+      { texto: 'Marca institucional', href: 'marca-institucional.html', icono: 'i-marca' } ] },
+    { id: 'pdm', titulo: 'Estructura del PDM', icono: 'i-estructura', items: [
+      { texto: 'Líneas estratégicas', href: 'lineas.html', icono: 'i-lineas' },
+      { texto: 'Programas', href: 'programas.html', icono: 'i-programas' },
+      { texto: 'Productos e indicadores', href: 'productos-indicadores.html', icono: 'i-productos' } ] },
+    { id: 'asignaciones', titulo: 'Asignaciones y revisiones', icono: 'i-asignaciones', items: [
+      { texto: 'Asignaciones de metas', href: 'asignacion-responsables.html', icono: 'i-asignar' },
+      { texto: 'Listado de asignación de metas', href: 'asignacion-metas.html', icono: 'i-listado' },
+      { texto: 'Revisión de avances y aprobaciones', href: 'revision-avances.html', icono: 'i-revision' } ] },
+    { id: 'cumplimientos', titulo: 'Cumplimientos', icono: 'i-cumplimientos', items: [
+      { texto: 'Cumplimientos de Metas', href: 'registro-avance-evidencia.html', icono: 'i-avance' },
+      { texto: 'Estado de cumplimientos', href: 'estado-cumplimientos.html', icono: 'i-estado' } ] },
+    { id: 'reportes', titulo: 'Reportes y exportación', icono: 'i-reportes', items: [
+      { texto: 'Reportes de informes', href: 'reportes-informes.html', icono: 'i-hoja' },
+      { texto: 'Informe de cumplimiento del PDM', href: 'informe-general.html', icono: 'i-rendicion' } ] },
+    { id: 'bitacora', titulo: 'Bitácora de auditoría', icono: 'i-bitacora', items: [
+      { texto: 'Seguridad y auditoría', href: 'seguridad-auditoria.html', icono: 'i-auditoria' } ] },
+    { id: 'respaldo', titulo: 'Copias de Seguridad y Restauración', icono: 'i-respaldo', items: [
+      { texto: 'Copias de seguridad', href: 'copias-de-seguridad.html', icono: 'i-copia' } ] }
+  ];
+
+  /* ------------------------------------------------------------------
+     Qué módulos ve cada rol (el servidor también lo valida en cada consulta).
+     Cada rol lista los módulos por su id. Si un módulo solo debe mostrar
+     algunas páginas, se indica con { modulo, paginas: [...] }.
+     ------------------------------------------------------------------ */
+  const PERMISOS = {
+    'Superadministrador': ['tablero', 'seguridad', 'config', 'pdm', 'reportes', 'bitacora', 'respaldo'],
+    'Administrador': ['tablero', 'asignaciones', { modulo: 'reportes', paginas: ['reportes-informes.html', 'informe-general.html'] }],
+    'Gestor líder': [{ modulo: 'tablero' }, 'cumplimientos', { modulo: 'reportes', paginas: ['reportes-informes.html'] }],
+    'Gestor': ['tablero', 'cumplimientos']
+  };
+
+  function modulosDe(rol){
+    const reglas = (PERMISOS[rol] || []).map(r => typeof r === 'string' ? { modulo: r } : r);
+    return reglas.map(r => {
+      const m = MODULOS.find(x => x.id === r.modulo);
+      if(!m) return null;
+      return r.paginas ? { ...m, items: m.items.filter(i => r.paginas.includes(i.href)) } : m;
+    }).filter(m => m && m.items.length);
+  }
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const icono = (id, clase = '') => `<svg class="ico ${clase}" aria-hidden="true"><use href="#${id}"/></svg>`;
+
+  const btnMenu = $('btnMenu'), drawer = $('drawer'), scrim = $('scrim'), btnCerrar = $('btnCerrar');
+  const btnUsuario = $('btnUsuario'), userMenu = $('userMenu'), userWrap = $('user');
+
+  /* ---------- panel lateral: grupos desplegables ---------- */
+  function pintarModulos(lista){ $('drawerGrupos').innerHTML = lista.map(sec => `
+    <div class="grupo" data-grupo="${esc(sec.id)}">
+      <button class="grupo-btn" type="button" aria-expanded="false" aria-controls="g-${esc(sec.id)}">
+        <span class="gi">${icono(sec.icono)}</span>
+        <span class="gt">${esc(sec.titulo)}</span>
+        ${icono('i-flecha', 'chev')}
+      </button>
+      <div class="grupo-panel" id="g-${esc(sec.id)}">
+        <ul>${sec.items.map(it => `
+          <li><a class="sub" href="${esc(it.href)}">${icono(it.icono)}<span>${esc(it.texto)}</span></a></li>`).join('')}
+        </ul>
+      </div>
+    </div>`).join(''); }
+
+  // Un solo grupo abierto a la vez
+  $('drawerGrupos').addEventListener('click', e => {
+    const btn = e.target.closest('.grupo-btn');
+    if(!btn) return;
+    const abrir = btn.getAttribute('aria-expanded') !== 'true';
+    document.querySelectorAll('.grupo-btn').forEach(b => {
+      b.setAttribute('aria-expanded', 'false');
+      b.closest('.grupo').classList.remove('abierto');
+    });
+    if(abrir){
+      btn.setAttribute('aria-expanded', 'true');
+      btn.closest('.grupo').classList.add('abierto');
+    }
+  });
+
+  /* ---------- abrir y cerrar el panel lateral ---------- */
+  function abrirDrawer(){
+    cerrarMenuUsuario(false);
+    drawer.classList.add('open');
+    scrim.classList.add('open');
+    btnMenu.setAttribute('aria-expanded', 'true');
+    document.documentElement.classList.add('bloqueado');   // el contenido no se desplaza detrás del panel
+    requestAnimationFrame(() => btnCerrar.focus());
+  }
+
+  function cerrarDrawer(devolverFoco = true){
+    if(!drawer.classList.contains('open')) return;
+    drawer.classList.remove('open');
+    scrim.classList.remove('open');
+    btnMenu.setAttribute('aria-expanded', 'false');
+    document.documentElement.classList.remove('bloqueado');
+    if(devolverFoco) btnMenu.focus();
+  }
+
+  btnMenu.addEventListener('click', () => drawer.classList.contains('open') ? cerrarDrawer() : abrirDrawer());
+  btnCerrar.addEventListener('click', () => cerrarDrawer());
+  scrim.addEventListener('click', () => cerrarDrawer());
+
+  // El foco se queda dentro del panel mientras está abierto
+  drawer.addEventListener('keydown', e => {
+    if(e.key !== 'Tab') return;
+    const focos = Array.from(drawer.querySelectorAll('a[href], button')).filter(el => el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden');
+    if(focos.length === 0) return;
+    const primero = focos[0], ultimo = focos[focos.length - 1];
+    if(e.shiftKey && document.activeElement === primero){ e.preventDefault(); ultimo.focus(); }
+    else if(!e.shiftKey && document.activeElement === ultimo){ e.preventDefault(); primero.focus(); }
+  });
+
+  /* ---------- menú desplegable de usuario ---------- */
+  function abrirMenuUsuario(){
+    userMenu.classList.add('open');
+    btnUsuario.setAttribute('aria-expanded', 'true');
+  }
+  function cerrarMenuUsuario(devolverFoco = true){
+    if(!userMenu.classList.contains('open')) return;
+    userMenu.classList.remove('open');
+    btnUsuario.setAttribute('aria-expanded', 'false');
+    if(devolverFoco) btnUsuario.focus();
+  }
+
+  btnUsuario.addEventListener('click', () => userMenu.classList.contains('open') ? cerrarMenuUsuario(false) : abrirMenuUsuario());
+
+  userMenu.addEventListener('keydown', e => {
+    const items = Array.from(userMenu.querySelectorAll('.item'));
+    const i = items.indexOf(document.activeElement);
+    if(e.key === 'ArrowDown'){ e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    if(e.key === 'ArrowUp'){ e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  });
+  btnUsuario.addEventListener('keydown', e => {
+    if(e.key === 'ArrowDown'){ e.preventDefault(); abrirMenuUsuario(); userMenu.querySelector('.item').focus(); }
+  });
+
+  document.addEventListener('click', e => { if(!userWrap.contains(e.target)) cerrarMenuUsuario(false); });
+  userWrap.addEventListener('focusout', e => { if(!userWrap.contains(e.relatedTarget)) cerrarMenuUsuario(false); });
+
+  document.addEventListener('keydown', e => {
+    if(e.key !== 'Escape') return;
+    if($('pwOverlay').classList.contains('open')) cerrarPw();
+    else if(userMenu.classList.contains('open')) cerrarMenuUsuario();
+    else cerrarDrawer();
+  });
+
+  // Cerrar sesión: avisa al servidor y vuelve a la pantalla de inicio de sesión
+  let tipoSesion = 'admin';
+  $('btnSalir').addEventListener('click', async () => {
+    try{ await fetch(tipoSesion === 'gestor' ? '/api/gestor/logout' : '/api/logout', { method: 'POST' }); }catch(e){ /* sin servidor: igual se vuelve al inicio de sesión */ }
+    location.href = 'iniciar-sesion.html';
+  });
+
+  /* ---------- cambio de contraseña (se guarda en la base de datos) ---------- */
+  const pwOverlay = $('pwOverlay'), pwForm = $('pwForm'), pwMsg = $('pwMsg'), pwGuardar = $('pwGuardar');
+  const pwCampos = [$('pwActual'), $('pwNueva'), $('pwConfirmar')];
+  let pwCierre = null;
+
+  function pwMensaje(tipo, texto){
+    pwMsg.className = 'pw-msg' + (tipo ? ' ' + tipo : '');
+    pwMsg.textContent = texto || '';
+  }
+  function abrirPw(){
+    cerrarMenuUsuario(false);
+    pwForm.reset();
+    pwCampos.forEach(c => c.type = 'password');
+    pwMensaje('', '');
+    pwGuardar.disabled = false;
+    pwOverlay.classList.add('open');
+    $('pwActual').focus();
+  }
+  function cerrarPw(){
+    clearTimeout(pwCierre);
+    pwOverlay.classList.remove('open');
+    pwForm.reset();
+    btnUsuario.focus();
+  }
+  $('btnCambiarPw').addEventListener('click', abrirPw);
+  $('pwCancelar').addEventListener('click', cerrarPw);
+  pwOverlay.addEventListener('mousedown', e => { if(e.target === pwOverlay) cerrarPw(); });
+  $('pwMostrar').addEventListener('change', e => pwCampos.forEach(c => c.type = e.target.checked ? 'text' : 'password'));
+
+  pwForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    pwMensaje('', '');
+    const [actual, nueva, confirmar] = pwCampos.map(c => c.value);
+    if(!actual){ pwCampos[0].focus(); return pwMensaje('error', 'Escribe tu contraseña actual.'); }
+    if(nueva.length < 8){ pwCampos[1].focus(); return pwMensaje('error', 'La nueva contraseña debe tener mínimo 8 caracteres.'); }
+    if(nueva === actual){ pwCampos[1].focus(); return pwMensaje('error', 'La nueva contraseña debe ser distinta de la actual.'); }
+    if(nueva !== confirmar){ pwCampos[2].focus(); return pwMensaje('error', 'La confirmación no coincide con la nueva contraseña.'); }
+
+    pwGuardar.disabled = true;
+    try{
+      const r = await fetch('/api/cambiar-password', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ actual, nueva })
+      });
+      if(r.status === 401){ location.href = 'iniciar-sesion.html'; return; }
+      const d = await r.json().catch(() => ({}));
+      if(r.ok){
+        pwCampos.forEach(c => c.value = '');
+        pwMensaje('ok', 'Contraseña actualizada correctamente. Úsala en tu próximo inicio de sesión.');
+        pwCierre = setTimeout(cerrarPw, 2200);
+        return;
+      }
+      pwMensaje('error', d.error || 'No se pudo cambiar la contraseña (' + r.status + ').');
+      if(r.status === 403){ pwCampos[0].value = ''; pwCampos[0].focus(); }
+    }catch(err){
+      pwMensaje('error', 'No se pudo conectar con el servidor. Comprueba que "node server.js" esté en ejecución.');
+    }
+    pwGuardar.disabled = false;
+  });
+
+  /* ---------- sesión: carga el rol con el que se inició sesión ---------- */
+  function ponerRol(rol, vista){
+    $('rolTxt').textContent = 'Rol: ' + rol;
+    $('rolMenu').textContent = 'Rol: ' + rol;
+    $('vistaMenu').textContent = vista || 'SISR';
+  }
+
+  async function cargarSesion(){
+    try{
+      let r = await fetch('/api/sesion');
+      if(r.ok){ tipoSesion = 'admin'; }
+      else{
+        r = await fetch('/api/gestor/sesion');
+        if(!r.ok){ location.href = 'iniciar-sesion.html'; return; }
+        tipoSesion = 'gestor';
+      }
+      const u = await r.json();
+      ponerRol(u.rol, tipoSesion === 'gestor' ? 'Gestor · SISR' : 'SISR');
+      pintarModulos(modulosDe(u.rol));
+    }catch(e){
+      ponerRol('Sin conexión', 'Comprueba que "node server.js" esté en ejecución');
+    }
+  }
+  cargarSesion();
+
+  window.addEventListener('pageshow', () => { cerrarDrawer(false); cerrarMenuUsuario(false); });
+
+</script>
+
+</body>
+</html>
